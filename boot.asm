@@ -17,7 +17,13 @@ _start:
 
     mov si, msg
     call printstr
-    jmp $
+
+keyboard_loop:
+    call readchar
+    call putchar
+    jmp keyboard_loop
+    
+    hlt
 
 ; al = character to write
 putchar:
@@ -42,6 +48,11 @@ printstr:
     pop es
     ret
 
+; AH = Scan code of the key pressed down, AL = ASCII character of the button pressed
+readchar:
+    mov ah, 0h
+    int 16h
+    ret
 
 msg: db 'Hello, I am Maxim', NEWLINE, CARRIAGE_RET
 
