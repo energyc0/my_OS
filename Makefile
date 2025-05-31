@@ -13,4 +13,4 @@ clean:
 	rm *.o $(DISK)
 
 qemu:
-	qemu-system-i386 disk.img
+	qemu-system-i386 -S -gdb tcp::1234 -fda $(DISK) &
