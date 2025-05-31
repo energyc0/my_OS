@@ -3,6 +3,7 @@ org 0x7c00
 
 NEWLINE equ 0Ah
 CARRIAGE_RET equ 0Dh
+KERNEL_START equ 0x500
 
 _start:
     cli
@@ -17,12 +18,13 @@ _start:
     mov bp, 0x7c00 ; setup stack
     mov sp, bp
 
-    ;mov si, msg
-    ;call printstr
+    mov ah, 00h ;set video mode and clear the screen
+    mov al, 03h
+    int 10h 
 
-    ;go into protected mode
 
-    lgdt [GDT_descriptor]
+
+    lgdt [GDT_descriptor] ;go into protected mode
     mov eax, cr0
     or eax, 1
     mov cr0, eax
@@ -97,10 +99,12 @@ start_protected_mode:
     mov ss, ax
     mov fs, ax
     mov gs, ax
-
+    
     mov al, 'Q'
-    mov ah, 0x0f
+    mov ah, 0xf
     mov [0xb8000], ax
+    ;jmp KERNEL_START
+    
     hlt
 
 times 510 - ($-$$) db 0

@@ -1,16 +1,31 @@
-DISK=disk.img
+BUILD_DIR=build
+DISK=$(BUILD_DIR)/disk.img
+
+BOOTLOADER_DIR=boot
+KERNEL_DIR=kernel
+
+BOOTLOADER=$(BUILD_DIR)/$(BOOTLOADER_DIR)/boot.bin
+KERNEL=$(BUILD_DIR)/$(KERNEL_DIR)/kernel.bin
 
 all: $(DISK)
 
-$(DISK): boot.o
+$(DISK): $(BOOTLOADER)
 	dd if=/dev/zero of=$@ bs=512 count=2880
-	dd if=boot.o of=$@ bs=512 count=1 seek=0 conv=notrunc
+	dd if=$(BOOTLOADER) of=$@ bs=512 count=1 seek=0 conv=notrunc
+#dd if=kernel.bin of=$@ bs=512 count=1 seek=1 conv=notrunc
 
-%.o: %.asm
-	nasm -f bin -o $@  $<
+$(BOOTLOADER): 
+	make -C $(BOOTLOADER_DIR)
+
+$(KERNEL): 
+	make -C $(KERNEL_DIR)
 
 clean:
-	rm *.o $(DISK)
+	rm -f $(DISK)
+	make clean -C $(KERNEL_DIR)
+	make clean -C $(BOOTLOADER_DIR)
 
 qemu:
 	qemu-system-i386 -S -gdb tcp::1234 -fda $(DISK) &
+
+.PHONY: $(BOOTLOADER) $(KERNEL) $(DISK)
