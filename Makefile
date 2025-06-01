@@ -27,5 +27,7 @@ clean:
 
 qemu:
 	qemu-system-i386 -S -gdb tcp::1234 -fda $(DISK) &
+	clear
+	gdb
 
 .PHONY: $(BOOTLOADER) $(KERNEL) $(DISK)

@@ -96,9 +96,6 @@ start_protected_mode:
     mov fs, ax
     mov gs, ax
     
-    ;mov al, 'Q'
-    ;mov ah, 0xf
-   ; mov [0xb8000], ax
     jmp KERNEL_START
     
     hlt
