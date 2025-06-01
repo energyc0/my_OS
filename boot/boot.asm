@@ -3,12 +3,12 @@ org 0x7c00
 
 NEWLINE equ 0Ah
 CARRIAGE_RET equ 0Dh
-KERNEL_START equ 0x500
+KERNEL_START equ 0x1000
 
 _start:
     cli
 
-    mov [bootdrive], dl ;save bootdrive
+    mov [drive_number], dl ;save drive number
 
     xor ax,ax ; setup segments
     mov ds, ax
@@ -22,7 +22,24 @@ _start:
     mov al, 03h
     int 10h 
 
+    ;load OS sector to es:bx
+load_OS_loop:
+    cmp BYTE [load_sector_attemps], 0
+    jz load_OS_ERROR
+    dec BYTE [load_sector_attemps]
 
+    xor ax,ax
+    mov es, ax
+    mov bx, KERNEL_START
+
+    mov ah, 02h
+    mov al, 1
+    mov ch, 0
+    mov cl, 2
+    mov dh, 0
+    mov dl, [drive_number]
+    int 13h
+    jc load_OS_loop ;carry flag is set on error
 
     lgdt [GDT_descriptor] ;go into protected mode
     mov eax, cr0
@@ -30,37 +47,16 @@ _start:
     mov cr0, eax
     jmp CODE_SEG:start_protected_mode
 
-; al = character to write
-putchar:
-    push ax
-    mov ah, 0eh
-    int 10h
-    pop ax
-    ret
+load_OS_ERROR:
+    mov si, load_OS_err_msg
+    call printstr
+    jmp $
 
-; es:si = null-terminated string
-printstr:
-    push es
-    push si
-.print_loop:
-    lodsb
-    cmp al, 0
-    jz .print_loop_end
-    call putchar
-    jmp .print_loop
-.print_loop_end:
-    pop si
-    pop es
-    ret
+%include "boot_output.asm"
 
-; AH = Scan code of the key pressed down, AL = ASCII character of the button pressed
-readchar:
-    mov ah, 0h
-    int 16h
-    ret
-
-msg: db 'Hello, I am Maxim', NEWLINE, CARRIAGE_RET
-bootdrive: db 0
+load_OS_err_msg: db "Failed to load OS sector!", NEWLINE, CARRIAGE_RET, 0
+load_sector_attemps: db 3
+drive_number: db 0
 
 GDT_descriptor:
     dw GDT_struct_end - GDT_struct_start - 1
@@ -100,10 +96,10 @@ start_protected_mode:
     mov fs, ax
     mov gs, ax
     
-    mov al, 'Q'
-    mov ah, 0xf
-    mov [0xb8000], ax
-    ;jmp KERNEL_START
+    ;mov al, 'Q'
+    ;mov ah, 0xf
+   ; mov [0xb8000], ax
+    jmp KERNEL_START
     
     hlt
 
