@@ -1,8 +1,12 @@
 bits 32
 
-extern main
+extern _main
+extern _stack_top_
 global _kernel_start_
 
 _kernel_start_:
-call main
+mov bp, _stack_top_
+mov sp, bp ; setup stack
+
+call _main
 hlt

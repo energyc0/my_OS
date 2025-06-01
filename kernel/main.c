@@ -1,11 +1,8 @@
 #include "console.h"
 
-void main(){
-    putchar('H');
-    putchar('e');
-    putchar('l');
-    putchar('l');
-    putchar('o');
-    putchar('!');
+const uint8_t hello_str[] = "Hello, this is my OS!";
+
+void _main(){
+    print_string(hello_str);
     return;
 }
