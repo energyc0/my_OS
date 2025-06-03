@@ -13,7 +13,7 @@ OBJ_FILES=$(patsubst %.c, $(BUILD_DIR)/%.o, $(SRC_C)) $(patsubst %.asm, $(BUILD_
 all: $(BUILD_DIR) $(KERNEL)
 
 $(KERNEL): $(OBJ_FILES)
-	ld -z noexecstack -m elf_i386 -Tkernel.ld $^ -o $(BUILD_DIR)/$(KERNEL_NAME).out
+	ld -z noexecstack -no-pie -m elf_i386 -Tkernel.ld $^ -o $(BUILD_DIR)/$(KERNEL_NAME).out
 	objcopy -O binary $(BUILD_DIR)/$(KERNEL_NAME).out $(BUILD_DIR)/$(KERNEL_NAME).bin
 	objcopy --only-keep-debug $(BUILD_DIR)/$(KERNEL_NAME).out $(BUILD_DIR)/$(KERNEL_NAME).dbg
 

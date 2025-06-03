@@ -9,7 +9,7 @@ uint8_t attrib = CA_FORE_RED | CA_FORE_GREEN | CA_FORE_BLUE;
 
 #define VIDEOMEMORY ((volatile uint16_t*)0xb8000)
 
-void __attribute__((optimize("O0"))) putchar(uint8_t c){
+void __attribute__((optimize("O0"))) putchar(char c){
     switch (c) {
         case '\n': cursor_y++; return;
         case '\r': cursor_x = 0; return;
@@ -22,13 +22,13 @@ void __attribute__((optimize("O0"))) putchar(uint8_t c){
     }
 }
 
-void print_string(const uint8_t* s){
+void print_string(const char* s){
     while (*s) 
         putchar(*s++);
     update_cursor();
 }
 
-void println(const uint8_t* s){
+void println(const char* s){
     print_string(s);
     putchar('\n');
     putchar('\r');
@@ -46,9 +46,47 @@ void update_cursor(){
     outb(0x3D5, (pos));
 }
 
-void printf(const uint8_t* fmt, ...){
+void printf(const char* fmt, ...){
+    static char buf[256];
     va_list ap;
     va_start(ap, fmt);
-
+    for (; *fmt; ++fmt) {
+        if(*fmt == '%'){
+            switch (*(++fmt)) {
+                case '\0': putchar('%'); --fmt; break;
+                case 'd': case 'i':{
+                    int32_t val = va_arg(ap, int32_t);
+                    print_string(itoa(val, buf, 10));
+                    break;
+                }
+                case 'O':{
+                    int32_t val = va_arg(ap, int32_t);
+                    buf[0] = '0';
+                    print_string(itoa(val, buf+1, 8));
+                    break;
+                }
+                case 'X':{
+                    int32_t val = va_arg(ap, int32_t);
+                    buf[0] = '0';
+                    buf[1] = 'x';
+                    print_string(itoa(val, buf+2, 16));
+                    break;
+                }
+                case 's':{
+                    const char* s = va_arg(ap,const char*);
+                    print_string(s);
+                    break;
+                }
+                case 'c': {
+                    uint32_t c = va_arg(ap,uint32_t);
+                    putchar(c);
+                    break;
+                }
+                case '%': putchar('%'); break;
+            }
+        }else{
+            putchar(*fmt);
+        }
+    }
     va_end(ap);
 }

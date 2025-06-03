@@ -23,8 +23,4 @@ SECTIONS{
     _stack_end_ = .;
     . += 0x4000; /* 16 Kb stack */
     _stack_top_ = .;
-
-    /*/DISCARD/ : {
-        *(.eh_frame)
-    }*/
 }
