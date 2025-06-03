@@ -37,3 +37,14 @@ int32_t strcmp(const char* s1, const char* s2){
     }
     return *s1 - *s2;
 }
+
+void* memcpy(void* dest, const void* src, size_t count){
+    for(size_t i = 0; i < count; ++i)
+        ((char*)dest)[i] = ((char*)src)[i];
+    return dest;
+}   
+void* memset(void* dest, char ch, size_t count){
+    for(size_t i = 0; i < count; ++i)
+        ((char*)dest)[i] = ch;
+    return dest;
+}

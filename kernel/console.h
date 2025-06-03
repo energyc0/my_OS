@@ -21,6 +21,9 @@ void __attribute__((optimize("O0"))) putchar(char c);
 void print_string(const char* s);
 void println(const char* s);
 void printf(const char* fmt, ...);
+
+void clear_screen();
+void move_cursor(int32_t x, int32_t y);
 void set_char_attrib(char_attrib_t attr);
 void update_cursor();
 

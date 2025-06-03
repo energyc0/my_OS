@@ -3,8 +3,8 @@
 #include "utils.h"
 #include <stdarg.h>
 
-uint16_t cursor_x = 0;
-uint16_t cursor_y = 0;
+int32_t cursor_x = 0;
+int32_t cursor_y = 0;
 uint8_t attrib = CA_FORE_RED | CA_FORE_GREEN | CA_FORE_BLUE;
 
 #define VIDEOMEMORY ((volatile uint16_t*)0xb8000)
@@ -89,4 +89,16 @@ void printf(const char* fmt, ...){
         }
     }
     va_end(ap);
+}
+
+void move_cursor(int32_t x, int32_t y){
+    cursor_x = x;
+    cursor_y = y;
+}
+
+void clear_screen(){
+    const size_t sz = CONSOLE_WIDTH * CONSOLE_HEIGHT;
+    for (size_t i = 0; i < sz; ++i) {
+        VIDEOMEMORY[i] = (attrib<<8);
+    }
 }

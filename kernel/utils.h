@@ -13,4 +13,7 @@ char* itoa(int32_t value, char* str, uint32_t base);
 size_t strlen(const char* str);
 int32_t strcmp(const char* s1, const char* s2);
 
+void* memcpy(void* dest, const void* src, size_t count);
+void* memset(void* dest, char ch, size_t count );
+
 #endif
