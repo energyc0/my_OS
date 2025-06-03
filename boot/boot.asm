@@ -33,7 +33,7 @@ load_OS_loop:
     mov bx, KERNEL_START
 
     mov ah, 02h
-    mov al, 3
+    mov al, 30
     mov ch, 0
     mov cl, 2
     mov dh, 0
