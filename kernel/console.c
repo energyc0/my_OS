@@ -9,7 +9,7 @@ uint8_t attrib = CA_FORE_RED | CA_FORE_GREEN | CA_FORE_BLUE;
 
 #define VIDEOMEMORY ((volatile uint16_t*)0xb8000)
 
-void __attribute__((optimize("O0"))) putchar(char c){
+void putchar(char c){
     switch (c) {
         case '\n': cursor_y++; return;
         case '\r': cursor_x = 0; return;

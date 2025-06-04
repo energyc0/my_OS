@@ -17,7 +17,7 @@ typedef enum{
 #define CONSOLE_WIDTH 80
 #define CONSOLE_HEIGHT 25
 
-void __attribute__((optimize("O0"))) putchar(char c);
+void putchar(char c);
 void print_string(const char* s);
 void println(const char* s);
 void printf(const char* fmt, ...);

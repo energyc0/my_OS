@@ -12,9 +12,18 @@ SECTIONS{
     .text : {
         ../build/kernel/kernel_start.elf
         *(.text)
+        *(.text.*)
     } : code
-    .data : { *(.data) } : data
-    .rodata : { *(.rodata) } : rodata
+    
+    .data : { 
+        *(.data)
+        *(.data*)
+    } : data
+
+    .rodata : {
+         *(.rodata .rodata.*) 
+    } : rodata
+
     .bss : {
         *(.bss .bss.*)
     } : bss
@@ -23,4 +32,8 @@ SECTIONS{
     _stack_end_ = .;
     . += 0x4000; /* 16 Kb stack */
     _stack_top_ = .;
+
+    /DISCARD/ :{
+        *(.eh_frame)
+    }
 }

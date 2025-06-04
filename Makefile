@@ -12,7 +12,7 @@ all: $(DISK)
 $(DISK): $(BOOTLOADER) $(KERNEL)
 	dd if=/dev/zero of=$@ bs=512 count=2880
 	dd if=$(BOOTLOADER) of=$@ bs=512 count=1 seek=0 conv=notrunc
-	dd if=$(KERNEL) of=$@ bs=512 count=$$(($(shell stat $(KERNEL) --printf="%s")/512)) seek=1 conv=notrunc
+	dd if=$(KERNEL) of=$@ bs=512 count=$$(( ($(shell stat $(KERNEL) --printf="%s") + 512 - 1) /512)) seek=1 conv=notrunc
 
 $(BOOTLOADER): 
 	make -C $(BOOTLOADER_DIR)
@@ -30,4 +30,10 @@ qemu:
 	clear
 	gdb
 
-.PHONY: $(BOOTLOADER) $(KERNEL) $(DISK)
+kerndump:
+	objdump -D -S -Mintel,i8086 -b binary -m i386 --adjust-vma=0x1000 $(KERNEL)
+
+kernsections:
+	readelf -l $(BUILD_DIR)/$(KERNEL_DIR)/kernel.out
+
+.PHONY: $(BOOTLOADER) $(KERNEL) $(DISK) qemu kerndump
