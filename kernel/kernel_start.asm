@@ -9,5 +9,6 @@ mov bp, _stack_top_
 mov sp, bp ; setup stack
 
 call kmain
+_kernel_start_loop:
 hlt
-jmp $
+jmp _kernel_start_loop
