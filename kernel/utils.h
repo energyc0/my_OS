@@ -17,8 +17,12 @@ typedef uint32_t size_t;
 
 char* itoa(int32_t value, char* str, uint32_t base);
 size_t strlen(const char* str);
-int32_t strcmp(const char* s1, const char* s2);
+int32_t strcmp(const char* s1, const char* s2);\
+
+char toupper(char c);
 char tolower(char c);
+int isalpha(char c);
+int isdigit(char c);
 char* makelower(char* s);
 
 void* memcpy(void* dest, const void* src, size_t count);

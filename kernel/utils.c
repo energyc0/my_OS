@@ -55,6 +55,12 @@ char tolower(char c){
     return c;
 }
 
+char toupper(char c){
+    if('a' <= c && c <= 'z')
+        c -= 32;
+    return c;
+}
+
 char* makelower(char* s){
     char*ptr = s;
     while(*ptr){
@@ -62,6 +68,14 @@ char* makelower(char* s){
         ++ptr;
     }
     return s;
+}
+
+int isalpha(char c){
+    return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z');
+}
+
+int isdigit(char c){
+    return '0' <= c && c <= '9';
 }
 
 uint8_t inb(uint16_t port){

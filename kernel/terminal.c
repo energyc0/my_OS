@@ -1,4 +1,5 @@
 #include "terminal.h"
+#include "keyboard.h"
 #include "utils.h"
 #include <stdarg.h>
 
@@ -101,5 +102,22 @@ void clear_screen(){
     const size_t sz = CONSOLE_WIDTH * CONSOLE_HEIGHT;
     for (size_t i = 0; i < sz; ++i) {
         VIDEOMEMORY[i] = (attrib<<8);
+    }
+}
+
+void send_symbol_to_terminal(scancode_t scancode){
+    char ch = reinterpet_key_to_char(scancode);
+    if (ch != '\0') {
+        if(isalpha(ch))
+            putchar((is_shift_pressed() ^ is_capslock_enabled()) ? toupper(ch) : ch);
+        else if(isdigit(ch))
+            putchar(")!@#$%^&*("[ch - '0']);
+        else
+            putchar(ch);
+        update_cursor();
+    }else{
+       // switch (scancode) {
+        //    case KEY_BACKSPACE:
+        //}
     }
 }

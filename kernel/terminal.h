@@ -2,6 +2,7 @@
 #define __TERMINAL_H
 
 #include <stdint.h>
+#include "keyboard.h"
 
 typedef enum{
     CA_FORE_BLUE = 0b00000001,
@@ -26,5 +27,7 @@ void clear_screen();
 void move_cursor(int32_t x, int32_t y);
 void set_char_attrib(char_attrib_t attr);
 void update_cursor();
+
+void send_symbol_to_terminal(scancode_t scancode);
 
 #endif
