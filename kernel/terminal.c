@@ -1,5 +1,4 @@
-#include "console.h"
-#include "io.h"
+#include "terminal.h"
 #include "utils.h"
 #include <stdarg.h>
 
@@ -59,17 +58,19 @@ void printf(const char* fmt, ...){
                     print_string(itoa(val, buf, 10));
                     break;
                 }
-                case 'O':{
+                case 'O': case 'o':{
                     int32_t val = va_arg(ap, int32_t);
                     buf[0] = '0';
-                    print_string(itoa(val, buf+1, 8));
+                    itoa(val, buf+1, 8);
+                    print_string(buf);
                     break;
                 }
-                case 'X':{
+                case 'X': case 'x':{
                     int32_t val = va_arg(ap, int32_t);
                     buf[0] = '0';
                     buf[1] = 'x';
-                    print_string(itoa(val, buf+2, 16));
+                    itoa(val, buf+2, 16);
+                    print_string(*fmt == 'x' ? makelower(buf) : buf);
                     break;
                 }
                 case 's':{

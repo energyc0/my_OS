@@ -1,7 +1,8 @@
 #include "isr.h"
-#include "console.h"
+#include "terminal.h"
 #include "interrupts.h"
-#include "io.h"
+#include "keyboard.h"
+#include "utils.h"
 #include <stdint.h>
 
 static uint32_t interrupt_num;
@@ -104,12 +105,11 @@ __attribute__((naked))void isr_15(){
 }
 
 void isr_handler_0(){
-    println("isr_handler_0 called");
+    //print_string("Timer!!! ");
     send_EOI(IRQ_TIMER);
 }
 void isr_handler_1(){
-    uint8_t scancode = inb(0x60);
-    putchar(scancode);
+    process_scancode();
     send_EOI(IRQ_KEYBOARD);
 }
 void isr_handler_2(){
@@ -197,7 +197,7 @@ void common_isr_stub_switcher(uint32_t int_num){
         case 13: isr_handler_13(); break;
         case 14: isr_handler_14(); break;
         case 15: isr_handler_15(); break;
-        default: println("interrupt!");
+        default: printf("Unhandled interrupt: %X\n", int_num);
     }
 
 }

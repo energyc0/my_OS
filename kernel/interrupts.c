@@ -1,5 +1,5 @@
 #include "interrupts.h"
-#include "io.h"
+#include "utils.h"
 #include "isr.h"
 #include <stdint.h>
 
@@ -55,19 +55,27 @@ void init_IDT(){
 void configure_PIC(){
     //start to reconfigure PIC
     outb(PIC_MASTER_CONTROL_PORT, 0x11);
+    io_wait();
     outb(PIC_SLAVE_CONTROL_PORT, 0x11);
+    io_wait();
 
     //set interrupt vector
     outb(PIC_MASTER_DATA_PORT, VECTOR_INTERRUPT_OFFSET);
+    io_wait();
     outb(PIC_SLAVE_DATA_PORT, VECTOR_INTERRUPT_OFFSET + 8);
+    io_wait();
 
     //set cascade mode
     outb(PIC_MASTER_DATA_PORT, 0x04);
+    io_wait();
     outb(PIC_SLAVE_DATA_PORT, 0x02);
+    io_wait();
 
     //set i8086 mode
     outb(PIC_MASTER_DATA_PORT, 0x01);
+    io_wait();
     outb(PIC_SLAVE_DATA_PORT, 0x01);
+    io_wait();
 }
 
 void set_mask_IRQ(IRQ_t irq){
@@ -103,9 +111,3 @@ void mask_all_irq(){
     outb(PIC_SLAVE_DATA_PORT, 0xff);
 }
 
-void set_interrupts(){
-    asm volatile("sti");
-}
-void disable_interrupts(){
-    asm volatile("cli");
-}

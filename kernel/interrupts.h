@@ -65,7 +65,7 @@ void disable_mask_IRQ(IRQ_t irq);
 void mask_all_irq();
 void send_EOI(IRQ_t irq);
 
-void set_interrupts();
-void disable_interrupts();
+#define set_interrupts() asm volatile ("sti")
+#define disable_interrupts() asm volatile ("cli")
 
 #endif
