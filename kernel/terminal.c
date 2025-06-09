@@ -2,6 +2,7 @@
 #include "keyboard.h"
 #include "utils.h"
 #include <stdarg.h>
+#include <stdint.h>
 
 int32_t cursor_x = 0;
 int32_t cursor_y = 0;
@@ -82,6 +83,14 @@ void printf(const char* fmt, ...){
                 case 'c': {
                     uint32_t c = va_arg(ap,uint32_t);
                     putchar(c);
+                    break;
+                }
+                case 'p':{
+                    uint32_t p = va_arg(ap,uint32_t);
+                    buf[0] = '0';
+                    buf[1] = 'x';
+                    itoa(p, buf+2, 16);
+                    print_string(buf);
                     break;
                 }
                 case '%': putchar('%'); break;
