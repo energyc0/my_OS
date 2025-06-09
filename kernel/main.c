@@ -17,6 +17,8 @@ void kmain(){
     set_interrupts();
     disable_mask_IRQ(IRQ_TIMER);
     disable_mask_IRQ(IRQ_KEYBOARD);
+    
+    
 
     return;
 }

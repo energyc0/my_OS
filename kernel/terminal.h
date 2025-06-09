@@ -15,16 +15,22 @@ typedef enum{
     CA_BACK_BRIGHT = 0b10000000
 } char_attrib_t;
 
-#define CONSOLE_WIDTH 80
-#define CONSOLE_HEIGHT 25
+#define TERMINAL_WIDTH 80
+#define TERMINAL_HEIGHT 25
 
-void putchar(char c);
-void print_string(const char* s);
-void println(const char* s);
-void printf(const char* fmt, ...);
+
+void drawchar(char ch);
+void erasechar();
+
+void proc_newline();
+void proc_carriage_ret();
+
+void advance_cursor();
+void backward_cursor();
 
 void clear_screen();
 void move_cursor(int32_t x, int32_t y);
+void get_cursor(int32_t* x, int32_t* y);
 void set_char_attrib(char_attrib_t attr);
 void update_cursor();
 

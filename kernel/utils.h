@@ -2,6 +2,7 @@
 #define UTILS_H
 
 #include <stdint.h>
+#include "io.h"
 #include "interrupts.h"
 
 #define NULL (0)
