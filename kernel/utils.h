@@ -29,6 +29,8 @@ char* makelower(char* s);
 void* memcpy(void* dest, const void* src, size_t count);
 void* memset(void* dest, char ch, size_t count );
 
+void sleep(unsigned int ms);
+
 uint8_t inb(uint16_t port);
 void outb(uint16_t port, uint8_t byte);
 

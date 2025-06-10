@@ -1,5 +1,10 @@
 #include "utils.h"
+#include "timer.h"
 #include <stdint.h>
+
+extern uint64_t tick_counter;
+
+static inline void halt();
 
 char* itoa(int32_t value, char* str, uint32_t base){
     const char symbols[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
@@ -88,4 +93,14 @@ uint8_t inb(uint16_t port){
 void outb(uint16_t port, uint8_t byte){
     asm volatile ("outb %0, %1" 
         : : "Nd"(port), "a"(byte) : "memory");
+}
+
+void sleep(unsigned int ms){
+    uint64_t start_time = tick_counter;
+    while(tick_counter - start_time < ms)
+        halt();
+}
+
+static inline void halt(){
+    asm volatile("hlt");
 }

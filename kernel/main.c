@@ -1,4 +1,5 @@
 #include "terminal.h"
+#include "timer.h"
 #include "utils.h"
 #include "interrupts.h"
 #include "keyboard.h"
@@ -10,6 +11,8 @@ void kmain(){
     if(!init_keyboard())
         PANIC("Failed to initialize keyboard!");
 
+    timer_setup();
+
     init_IDT();
     configure_PIC();
 
@@ -18,7 +21,11 @@ void kmain(){
     disable_mask_IRQ(IRQ_TIMER);
     disable_mask_IRQ(IRQ_KEYBOARD);
     
-    
+    int counter = 1;
+    while (1) {
+        sleep(100);
+        printf("%d ", counter++);
+    }
 
     return;
 }

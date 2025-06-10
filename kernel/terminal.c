@@ -69,7 +69,7 @@ void erasechar(){
 void advance_cursor(){
     if(++cursor_x >= TERMINAL_WIDTH){
         cursor_x = 0;
-        --cursor_y;
+        ++cursor_y;
     }
 }
 

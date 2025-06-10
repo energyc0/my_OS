@@ -1,5 +1,5 @@
 #include "isr.h"
-#include "terminal.h"
+#include "timer.h"
 #include "interrupts.h"
 #include "keyboard.h"
 #include "utils.h"
@@ -105,7 +105,7 @@ __attribute__((naked))void isr_15(){
 }
 
 void isr_handler_0(){
-    //print_string("Timer!!! ");
+    timer_on_interrupt();
     send_EOI(IRQ_TIMER);
 }
 void isr_handler_1(){
