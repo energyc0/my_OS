@@ -33,6 +33,10 @@ SECTIONS{
     . += 0x4000; /* 16 Kb stack */
     _stack_top_ = .;
 
+    _heap_start_ = .;
+    . += 0x1000000; /* 16 Mb heap */
+    _heap_end_ = .;
+
     /DISCARD/ :{
         *(.eh_frame)
     }

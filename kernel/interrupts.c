@@ -106,7 +106,7 @@ void disable_mask_IRQ(IRQ_t irq){
     outb(port, data);
 }
 
-void mask_all_irq(){
+void mask_all_IRQ(){
     outb(PIC_MASTER_DATA_PORT, 0xff);
     outb(PIC_SLAVE_DATA_PORT, 0xff);
 }

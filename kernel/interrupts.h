@@ -62,7 +62,7 @@ void configure_PIC();
 
 void set_mask_IRQ(IRQ_t irq);
 void disable_mask_IRQ(IRQ_t irq);
-void mask_all_irq();
+void mask_all_IRQ();
 void send_EOI(IRQ_t irq);
 
 #define set_interrupts() asm volatile ("sti")
