@@ -19,21 +19,31 @@ typedef enum{
 #define TERMINAL_HEIGHT 25
 
 
+//draws char on the cursor position
 void drawchar(char ch);
+//erases char on the cursor position
 void erasechar();
 
+//moves cursor in the next line
 void proc_newline();
+//moves cursor in the start of the line
 void proc_carriage_ret();
 
+//moves cursor forward
 void advance_cursor();
+//moves cursor backward
 void backward_cursor();
 
 void clear_screen();
+//moves cursor without changing its position on the screen
 void move_cursor(int32_t x, int32_t y);
 void get_cursor(int32_t* x, int32_t* y);
 void set_char_attrib(char_attrib_t attr);
+//updates cursor position on the screen
 void update_cursor();
+void scroll();
 
+//process user input and output it on the screen
 void send_symbol_to_terminal(scancode_t scancode);
 
 #endif
