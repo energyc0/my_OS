@@ -1,6 +1,7 @@
 #include "heap.h"
 #include "io.h"
 #include "utils.h"
+#include <stdint.h>
 
 extern char _heap_start_[];
 extern char _heap_end_[];
@@ -25,6 +26,9 @@ static void chunk_dealloc(chunk_header* p);
 //merge neighbours if they are not allocated
 static void chunk_merge(chunk_header* p);
 
+//initalize new chunk header
+static chunk_header* chunk_create(void* mem, size_t size, chunk_header* next, chunk_header* prev);
+
 void heap_init(){
     root = (chunk_header*)_heap_start_;
     root->is_allocated = 0;
@@ -33,9 +37,18 @@ void heap_init(){
 }
 
 void* malloc(size_t size){
+    //align 4 bytes
+    size = (size + 4 - 1) / 4 * 4;
     void* ptr = chunk_find_free(size);
     if(ptr == NULL)
         PANIC("Failed to allocate %d bytes!\n", size);
+    return ptr;
+}
+
+void* calloc(size_t num, size_t size){
+    void* ptr = malloc(num*size);
+    if(ptr)
+        memset(ptr, 0, num*size);
     return ptr;
 }
 
@@ -44,6 +57,55 @@ void free(void* ptr){
     if(!chunk_is_valid((void*)chunk))
         PANIC("Invalid pointer for free()!\n");
     chunk_dealloc(chunk);
+}
+
+void* realloc(void* ptr, size_t new_size){
+    chunk_header* chunk = (chunk_header*)((char*)ptr - sizeof(chunk_header));
+    if(!chunk_is_valid(chunk))
+        PANIC("Invalid pointer for realloc()!\n");
+    if(chunk->size > new_size + sizeof(chunk_header)){
+        chunk_header* temp = chunk->next;
+
+        //create new header
+        chunk->next = (chunk_header*)((char*)chunk + new_size + sizeof(chunk_header));
+        chunk->next->is_allocated = 0;
+        chunk->next->next = temp;
+        chunk->next->prev = chunk;
+        chunk->next->size = chunk->size - new_size - sizeof(chunk_header);
+        //update size
+        chunk->size = new_size;
+    }else if(chunk->size < new_size){
+        size_t cur_sz = chunk->size;
+        chunk_header* temp = chunk->next;
+        //try to find more space on the right
+        for(;cur_sz < new_size && temp && !temp->is_allocated; temp = temp->next) {
+            cur_sz += sizeof(chunk_header) + temp->size;
+        }
+
+        //if found more space on the right
+        if(cur_sz >= new_size){
+            //try to emplace a new header
+            if(cur_sz > new_size + sizeof(chunk_header)){
+                chunk->next = chunk_create(chunk + sizeof(chunk_header) + new_size,
+                 cur_sz - new_size - sizeof(chunk_header),
+                  temp, chunk);
+                  chunk->size = new_size;
+            }else{
+                 chunk->next = temp;
+                 chunk->size = cur_sz;
+            }
+        }else{ 
+            //else deallocate this chunk and search for more space
+            chunk_dealloc(chunk);
+            ptr = malloc(new_size);
+            //if not enough space
+            if(!ptr)
+                return NULL;
+            //and then copy the data
+            memcpy(ptr, (char*)chunk + sizeof(chunk_header), chunk->size);
+        }
+    }
+    return ptr;
 }
 
 static void* chunk_find_free(size_t size){
@@ -88,7 +150,7 @@ void heap_debug(){
     printf("Heap start: %p\n", _heap_start_);
     printf("Heap end: %p\n", _heap_end_);
     for(chunk_header* ptr = root; ptr != NULL; ptr = ptr->next){
-        printf("Header at %p with size %d, next = %p, prev %p, %s\n",
+        printf("Header at %p with size %X, next = %p, prev %p, %s\n",
              ptr, ptr->size, ptr->next, ptr->prev, ptr->is_allocated ? "allocated" : "not allocated");
     }
 }
@@ -122,4 +184,13 @@ static void chunk_merge(chunk_header* p){
         p->next = temp;
         p->size = size;
     }
+}
+
+static chunk_header* chunk_create(void* mem, size_t size, chunk_header* next, chunk_header* prev){
+    chunk_header* ptr = (chunk_header*)mem;
+    ptr->is_allocated = 0;
+    ptr->next = next;
+    ptr->prev = prev;
+    ptr->size = size;
+    return ptr;
 }

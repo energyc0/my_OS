@@ -32,6 +32,10 @@ void init_IDT(){
     idt_ptr.offset = (uint32_t)idt_entries;
     idt_ptr.size = sizeof(idt_entries) - 1;
 
+    //initialize all interrupts to ignore
+    for(int i = 0; i < 256; i++)
+        init_IDT_entry(&idt_entries[i], (uint32_t)isr_ignore, CODE_SEG_OFFSET, GATE_TYPE_INT32, DPL_KERNEL);
+
     set_int_handler(IRQ_TIMER, isr_0);
     set_int_handler(IRQ_KEYBOARD, isr_1);
     set_int_handler(IRQ_CASCADE, isr_2);

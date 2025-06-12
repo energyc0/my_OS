@@ -2,6 +2,7 @@
 #define  __INTERRUPTS_H
 
 #include <stdint.h>
+#include "gdt.h"
 
 typedef enum IRQ_t{
     IRQ_TIMER = 0x0,
@@ -29,13 +30,6 @@ typedef enum gate_type_t{
     GATE_TYPE_TRAP16 = 0x7,
     GATE_TYPE_TRAP32 = 0xF,
 }gate_type_t;
-
-typedef enum DPL_t{
-    DPL_KERNEL = 0,
-    DPL_MID_HIGH = 1,
-    DPL_MID_LOW = 2,
-    DPL_USER = 3
-}DPL_t;
 
 typedef struct IDT_entry_t{
     uint16_t offset_low;

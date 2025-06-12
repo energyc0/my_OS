@@ -3,10 +3,11 @@
 
 #include "utils.h"
 
-#define PRINT_POINTER(ptr) printf(#ptr" = %p\n", ptr)
-
 void heap_init();
+
 void* malloc(size_t size);
+void* calloc(size_t num, size_t size);
+void* realloc(void* ptr, size_t new_size);
 void free(void* ptr);
 
 void heap_debug();

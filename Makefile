@@ -26,9 +26,7 @@ clean:
 	make clean -C $(BOOTLOADER_DIR)
 
 qemu:
-	qemu-system-i386 -S -gdb tcp::1234 -fda $(DISK) &
-	clear
-	gdb
+	qemu-system-i386 -S -gdb tcp::1234 -no-reboot -d int,cpu_reset -fda $(DISK)
 
 kerndump:
 	objdump -D -S -Mintel,i8086 -b binary -m i386 --adjust-vma=0x1000 $(KERNEL)

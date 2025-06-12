@@ -5,8 +5,12 @@
 #include "keyboard.h"
 #include "ps2.h"
 
-extern char _heap_start_[];
-extern char _heap_end_[];
+void print_array(int* arr, size_t len){
+    printf("Array at %p: ", arr);
+    for(size_t i = 0; i < len; i++)
+        printf("%d ", arr[i]);
+    putchar('\n');
+}
 
 void kmain(){
     heap_init();
@@ -26,20 +30,17 @@ void kmain(){
     disable_mask_IRQ(IRQ_KEYBOARD); 
     set_interrupts();
 
-    char* ptr1 = malloc(1024);
-    char* ptr2 = malloc(1024);
-    char* ptr3 = malloc(512);
-    char* ptr4 = malloc(16);
-    char* ptr5 = malloc(32);
-    heap_debug();
-
-    printf("After free()\n");
-    free(ptr1);
+    const int sz = 10;
+    int* ptr1 = malloc(sz*sizeof(int));
     
-    free(ptr3);
+    for(int i = 0; i < sz; i++)
+        ptr1[i] = i;
     heap_debug();
-    char* ptr = malloc(512);
-    printf("After malloc()\n");
+    print_array(ptr1, sz);
+
+    realloc(ptr1, (sz+2)*sizeof(int));
+    printf("After realloc()\n");
     heap_debug();
+    print_array(ptr1, sz+2);
     return;
 }

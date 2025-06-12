@@ -2,6 +2,8 @@
 #define __ISR_H
 #include <stdint.h>
 
+void isr_ignore();
+
 void isr_0();
 void isr_1();
 void isr_2();

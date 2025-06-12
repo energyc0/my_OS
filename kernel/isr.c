@@ -7,6 +7,10 @@
 
 static uint32_t interrupt_num;
 
+__attribute__((naked))void isr_ignore(){
+    asm volatile("jmp ignore_interrupt");
+}
+
 __attribute__((naked))void isr_0(){
     asm volatile(
         "cli\n"
@@ -175,7 +179,7 @@ asm volatile(
         "pop ds\n"
         "popa\n"
         "sti\n"
-
+"ignore_interrupt:"
         "iret" : : "m"(interrupt_num));
 }
 
