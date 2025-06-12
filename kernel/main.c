@@ -4,6 +4,7 @@
 #include "interrupts.h"
 #include "keyboard.h"
 #include "ps2.h"
+#include "gdt.h"
 
 void print_array(int* arr, size_t len){
     printf("Array at %p: ", arr);
@@ -13,8 +14,9 @@ void print_array(int* arr, size_t len){
 }
 
 void kmain(){
+    GDT_init();
     heap_init();
-
+/*
     if(!init_PS2_controller())
         PANIC("Failed to initialize PS/2 controller!");
     if(!init_keyboard())
@@ -42,5 +44,7 @@ void kmain(){
     printf("After realloc()\n");
     heap_debug();
     print_array(ptr1, sz+2);
+    */
+    printf("Hello!");
     return;
 }

@@ -37,12 +37,13 @@ void GDT_init(){
 
     asm volatile (
     "start_protected_mode:\n"
-    "mov ds, %0\n"
-    "mov es, %0\n"
-    "mov ss, %0\n"
-    "mov fs, %0\n"
-    "mov gs, %0\n"
-    : : "r"(DATA_SEGMENT));
+    "mov ax, %0\n"
+    "mov ds, ax\n"
+    "mov es, ax\n"
+    "mov ss, ax\n"
+    "mov fs, ax\n"
+    "mov gs, ax\n"
+    : : "n"(DATA_SEGMENT) : "eax");
 }
 
 static void init_GDT_entry(GDT_entry_t* p, uint32_t base, uint32_t limit, gdt_flags_t flags, gdt_access_byte_t access_byte, DPL_t dpl){
