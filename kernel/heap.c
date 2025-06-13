@@ -1,5 +1,4 @@
 #include "heap.h"
-#include "io.h"
 #include "utils.h"
 #include <stdint.h>
 
@@ -16,8 +15,8 @@ typedef struct chunk_header{
 static chunk_header* root;
 
 static void* chunk_find_free(size_t size);
-//return next node of the allocated chunk
-static chunk_header* chunk_alloc(chunk_header* p, size_t size);
+
+static void chunk_alloc(chunk_header* p, size_t size);
 static inline void chunk_remove(chunk_header* p);
 //check for free() if chunk is valid
 static inline int chunk_is_valid(chunk_header* p);
@@ -30,10 +29,9 @@ static void chunk_merge(chunk_header* p);
 static chunk_header* chunk_create(void* mem, size_t size, chunk_header* next, chunk_header* prev);
 
 void heap_init(){
-    root = (chunk_header*)_heap_start_;
-    root->is_allocated = 0;
-    root->next = root->prev = NULL;
-    root->size = _heap_end_ - _heap_start_ - sizeof(chunk_header);
+    root = chunk_create(_heap_start_,
+    _heap_end_ - _heap_start_ - sizeof(chunk_header),
+    NULL,NULL);
 }
 
 void* malloc(size_t size){
@@ -63,14 +61,9 @@ void* realloc(void* ptr, size_t new_size){
     if(!chunk_is_valid(chunk))
         PANIC("Invalid pointer for realloc()!\n");
     if(chunk->size > new_size + sizeof(chunk_header)){
-        chunk_header* temp = chunk->next;
-
         //create new header
-        chunk->next = (chunk_header*)((char*)chunk + new_size + sizeof(chunk_header));
-        chunk->next->is_allocated = 0;
-        chunk->next->next = temp;
-        chunk->next->prev = chunk;
-        chunk->next->size = chunk->size - new_size - sizeof(chunk_header);
+        chunk->next = chunk_create((chunk_header*)((char*)chunk + new_size + sizeof(chunk_header)),
+         chunk->size - new_size - sizeof(chunk_header), chunk->next, chunk);
         //update size
         chunk->size = new_size;
     }else if(chunk->size < new_size){
@@ -122,20 +115,14 @@ static void* chunk_find_free(size_t size){
     return NULL;
 }
 
-static chunk_header* chunk_alloc(chunk_header* hdr, size_t size){
+static void chunk_alloc(chunk_header* hdr, size_t size){
     //create new chunk on the next position
-    if (hdr->size > size + sizeof(chunk_header)) {
-        chunk_header* temp = hdr->next;
-        hdr->next = (chunk_header*)((char*)hdr + size + sizeof(chunk_header));
+    if (hdr->size > size + sizeof(chunk_header))
+        hdr->next = chunk_create(((char*)hdr + size + sizeof(chunk_header)),
+     hdr->size - size - sizeof(chunk_header), hdr->next, hdr);
 
-        hdr->next->size = hdr->size - size - sizeof(chunk_header);
-        hdr->next->next = temp;
-        hdr->next->prev = hdr;
-        hdr->next->is_allocated = 0;
-    }
     hdr->is_allocated = 1;
     hdr->size = size;
-    return hdr->next;
 }
 
 static inline void chunk_remove(chunk_header* p){
@@ -151,7 +138,8 @@ void heap_debug(){
     for(chunk_header* ptr = root; ptr != NULL; ptr = ptr->next){
         printf("Header at %p with size %X, next = %p, prev %p, %s\n",
              ptr, ptr->size, ptr->next, ptr->prev, ptr->is_allocated ? "allocated" : "not allocated");
-        if (ptr->prev && ((uint32_t)((char*)ptr - (char*)ptr->prev) != (sizeof(chunk_header) + ptr->prev->size)))
+        if ((ptr->prev && ((uint32_t)((char*)ptr - (char*)ptr->prev) != (sizeof(chunk_header) + ptr->prev->size) )) ||
+            (ptr->next && ((uint32_t)((char*)ptr->next - (char*)ptr)) != (sizeof(chunk_header) + ptr->size)))
             PANIC("Chunk headers corruption!!!\n");
     }
 }
@@ -172,19 +160,23 @@ static void chunk_dealloc(chunk_header* p){
 static void chunk_merge(chunk_header* p){
     if(p->is_allocated)
         return;
+
+    chunk_header* temp = p->next;
+    size_t size = p->size;
     // if there are free chunks on the left
-    if (p->prev && !p->prev->is_allocated)
-        chunk_merge(p->prev);
-    else{ //merge chunks on the right
-        chunk_header* temp = p->next;
-        size_t size = p->size;
-        while (temp && !temp->is_allocated){
-            size += sizeof(chunk_header) + temp->size;
-            temp = temp->next;
-        }
-        p->next = temp;
-        p->size = size;
+    while (p->prev && !p->prev->is_allocated) {
+        p = p->prev;
+        size += sizeof(chunk_header) + p->size;
     }
+    //merge chunks on the right
+    while (temp && !temp->is_allocated){
+        size += sizeof(chunk_header) + temp->size;
+        temp = temp->next;
+    }
+    p->next = temp;
+    if(temp)
+        temp->prev = p;
+    p->size = size;
 }
 
 static chunk_header* chunk_create(void* mem, size_t size, chunk_header* next, chunk_header* prev){
@@ -193,6 +185,11 @@ static chunk_header* chunk_create(void* mem, size_t size, chunk_header* next, ch
     ptr->next = next;
     ptr->prev = prev;
     ptr->size = size;
+
+    if(next)
+        next->prev = ptr;
+    if(prev)
+        prev->next = ptr;
     return ptr;
 }
 
@@ -224,8 +221,9 @@ void heap_multiple_test(){
     heap_debug();
 
     free(ptrs[1]); ptrs[1] = NULL;
+    free(ptrs[2]); ptrs[2] = NULL;
     free(ptrs[3]); ptrs[3] = NULL;
-    printf("Freed ptrs[1] and ptrs[3]\n");
+    printf("Freed ptrs[1-3]\n");
     heap_debug();
 
     void* new_ptr = malloc(50);

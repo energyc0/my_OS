@@ -1,7 +1,7 @@
 BUILD_DIR=../build/kernel
 KERNEL_NAME=kernel
 KERNEL=$(BUILD_DIR)/$(KERNEL_NAME).bin
-CFLAGS=-ggdb3 -c -m32 -ffreestanding -masm=intel -O0 -Wall -Wextra -fno-pic -nostdlib
+CFLAGS=-ggdb3 -c -m32 -ffreestanding -masm=intel -O2 -Wall -Wextra -fno-pic -nostdlib
 
 SRC_C=$(wildcard *.c)
 SRC_ASM=$(wildcard *.asm)

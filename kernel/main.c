@@ -26,18 +26,11 @@ void kmain(){
     disable_mask_IRQ(IRQ_KEYBOARD); 
     set_interrupts();
 
-    printf("Stack top: %p\nStack bottom: %p\n", _stack_top_, _stack_end_);
-    void* ptrs[10000];
-
-    for(int i = 0; i < 10000;i++){
-        ptrs[i] = malloc(10);
-    }
-    heap_debug();
-    sleep(1000);
-    for(int i = 0; i < 10000;i++){
-        free(ptrs[i]);
-    }
-    heap_debug();
+    heap_basic_test();
+    heap_multiple_test();
+    heap_calloc_test();
+    heap_realloc_test();
+    heap_edge_cases_test();
     printf("End.\n");
     return;
 }
