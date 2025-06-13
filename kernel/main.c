@@ -6,24 +6,18 @@
 #include "ps2.h"
 #include "gdt.h"
 
-void print_array(int* arr, size_t len){
-    printf("Array at %p: ", arr);
-    for(size_t i = 0; i < len; i++)
-        printf("%d ", arr[i]);
-    putchar('\n');
-}
-
+extern char _stack_top_[];
+extern char _stack_end_[];
 void kmain(){
     GDT_init();
     heap_init();
-/*
+
+
     if(!init_PS2_controller())
         PANIC("Failed to initialize PS/2 controller!");
     if(!init_keyboard())
         PANIC("Failed to initialize keyboard!");
-
     timer_setup();
-
     init_IDT();
     configure_PIC();
 
@@ -32,19 +26,18 @@ void kmain(){
     disable_mask_IRQ(IRQ_KEYBOARD); 
     set_interrupts();
 
-    const int sz = 10;
-    int* ptr1 = malloc(sz*sizeof(int));
-    
-    for(int i = 0; i < sz; i++)
-        ptr1[i] = i;
-    heap_debug();
-    print_array(ptr1, sz);
+    printf("Stack top: %p\nStack bottom: %p\n", _stack_top_, _stack_end_);
+    void* ptrs[10000];
 
-    realloc(ptr1, (sz+2)*sizeof(int));
-    printf("After realloc()\n");
+    for(int i = 0; i < 10000;i++){
+        ptrs[i] = malloc(10);
+    }
     heap_debug();
-    print_array(ptr1, sz+2);
-    */
-    printf("Hello!");
+    sleep(1000);
+    for(int i = 0; i < 10000;i++){
+        free(ptrs[i]);
+    }
+    heap_debug();
+    printf("End.\n");
     return;
 }

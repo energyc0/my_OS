@@ -39,10 +39,7 @@ void heap_init(){
 void* malloc(size_t size){
     //align 4 bytes
     size = (size + 4 - 1) / 4 * 4;
-    void* ptr = chunk_find_free(size);
-    if(ptr == NULL)
-        PANIC("Failed to allocate %d bytes!\n", size);
-    return ptr;
+    return size > 0 ? chunk_find_free(size) : NULL;
 }
 
 void* calloc(size_t num, size_t size){
@@ -53,6 +50,8 @@ void* calloc(size_t num, size_t size){
 }
 
 void free(void* ptr){
+    if(ptr == NULL)
+        return;
     chunk_header* chunk = (chunk_header*)((char*)ptr - sizeof(chunk_header));
     if(!chunk_is_valid((void*)chunk))
         PANIC("Invalid pointer for free()!\n");
@@ -86,7 +85,7 @@ void* realloc(void* ptr, size_t new_size){
         if(cur_sz >= new_size){
             //try to emplace a new header
             if(cur_sz > new_size + sizeof(chunk_header)){
-                chunk->next = chunk_create(chunk + sizeof(chunk_header) + new_size,
+                chunk->next = chunk_create((char*)chunk + sizeof(chunk_header) + new_size,
                  cur_sz - new_size - sizeof(chunk_header),
                   temp, chunk);
                   chunk->size = new_size;
@@ -152,6 +151,8 @@ void heap_debug(){
     for(chunk_header* ptr = root; ptr != NULL; ptr = ptr->next){
         printf("Header at %p with size %X, next = %p, prev %p, %s\n",
              ptr, ptr->size, ptr->next, ptr->prev, ptr->is_allocated ? "allocated" : "not allocated");
+        if (ptr->prev && ((uint32_t)((char*)ptr - (char*)ptr->prev) != (sizeof(chunk_header) + ptr->prev->size)))
+            PANIC("Chunk headers corruption!!!\n");
     }
 }
 
@@ -193,4 +194,101 @@ static chunk_header* chunk_create(void* mem, size_t size, chunk_header* next, ch
     ptr->prev = prev;
     ptr->size = size;
     return ptr;
+}
+
+void heap_basic_test(){
+    printf("=== Test: Basic malloc/free ===\n");
+
+    void* ptr1 = malloc(100);
+    printf("malloc(100) -> %p\n", ptr1);
+    heap_debug();
+
+    free(ptr1);
+    printf("free(ptr1)\n");
+    heap_debug();
+
+    void* ptr2 = malloc(100);
+    printf("malloc(100) -> %p (should reuse freed block)\n", ptr2);
+    heap_debug();
+    free(ptr2);
+}
+
+void heap_multiple_test(){
+    printf("=== Test: Multiple allocations ===\n");
+
+    void* ptrs[5];
+    for (int i = 0; i < 5; i++) {
+        ptrs[i] = malloc(50);
+        printf("malloc(50) -> %p\n", ptrs[i]);
+    }
+    heap_debug();
+
+    free(ptrs[1]); ptrs[1] = NULL;
+    free(ptrs[3]); ptrs[3] = NULL;
+    printf("Freed ptrs[1] and ptrs[3]\n");
+    heap_debug();
+
+    void* new_ptr = malloc(50);
+    printf("malloc(50) -> %p (should fill gaps)\n", new_ptr);
+    heap_debug();
+    free(new_ptr);
+
+    for (int i = 0; i < 5; i++) {
+        if (ptrs[i] != NULL) free(ptrs[i]);
+    }
+    heap_debug();
+}
+
+void heap_calloc_test(){
+    printf("=== Test: calloc ===\n");
+    int* arr = (int*)calloc(10, sizeof(int));
+    printf("calloc(10, sizeof(int)) -> %p\n", arr);
+
+    for (int i = 0; i < 10; i++) {
+        if (arr[i] != 0) {
+            printf("ERROR: calloc did not zero memory!\n");
+            break;
+        }
+    }
+    heap_debug();
+    free(arr);
+}
+
+void heap_realloc_test(){
+    printf("=== Test: realloc ===\n");
+
+    int* ptr = (int*)malloc(5 * sizeof(int));
+    printf("malloc(5 * sizeof(int)) -> %p\n", ptr);
+
+    for (int i = 0; i < 5; i++) ptr[i] = i;
+    heap_debug();
+
+    ptr = (int*)realloc(ptr, 10 * sizeof(int));
+    printf("realloc(ptr, 10 * sizeof(int)) -> %p\n", ptr);
+
+    for (int i = 0; i < 5; i++) {
+        if (ptr[i] != i) {
+            printf("ERROR: realloc corrupted data!\n");
+            break;
+        }
+    }
+
+    heap_debug();
+    free(ptr);
+}
+
+void heap_edge_cases_test(){
+    printf("=== Test: Edge cases ===\n");
+
+    void* ptr1 = malloc(0);
+    printf("malloc(0) -> %p\n", ptr1);
+
+    free(NULL);
+    printf("free(NULL) good\n");
+
+    void* huge_ptr = malloc(1024 * 1024);
+    printf("malloc(1MB) -> %p\n", huge_ptr);
+    heap_debug();
+    free(ptr1);
+    free(huge_ptr);
 }

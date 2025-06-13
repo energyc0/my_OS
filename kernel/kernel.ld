@@ -32,15 +32,15 @@ SECTIONS{
     } : bss
 
 
-        . = ALIGN(16);
-        _stack_end_ = .;
-        . += 0x4000; /* 16 Kb stack */
-        _stack_top_ = .;
+    . = ALIGN(16);
+    _stack_end_ = .;
+    . += 0x10000; /* 64 Kb stack */
+    _stack_top_ = .;
 
-        . = 0x1000000;
-        _heap_start_ = .;
-        . += 0x1000000; /* 16 Mb heap */
-        _heap_end_ = .;
+    . = 0x1000000;
+    _heap_start_ = .;
+    . += 0x1000000; /* 16 Mb heap */
+    _heap_end_ = .;
         
     /DISCARD/ :{
         *(.eh_frame)

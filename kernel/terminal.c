@@ -44,7 +44,7 @@ void send_symbol_to_terminal(scancode_t scancode){
     if (ch != '\0') {
         if(isalpha(ch))
             putchar((is_shift_pressed() ^ is_capslock_enabled()) ? toupper(ch) : ch);
-        else if(isdigit(ch))
+        else if(isdigit(ch) && is_shift_pressed())
             putchar(")!@#$%^&*("[ch - '0']);
         else
             putchar(ch);

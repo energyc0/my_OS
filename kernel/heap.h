@@ -12,4 +12,10 @@ void free(void* ptr);
 
 void heap_debug();
 
+void heap_basic_test();
+void heap_multiple_test();
+void heap_calloc_test();
+void heap_realloc_test();
+void heap_edge_cases_test();
+
 #endif

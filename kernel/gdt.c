@@ -28,22 +28,16 @@ void GDT_init(){
     DPL_KERNEL);
 
     asm volatile(
-    "lgdt %0\n" //go into protected mode
-    "mov eax, cr0\n"
-    "or eax, 1\n"
-    "mov cr0, eax\n"
+    "lgdt %0\n"
     "jmp %1:start_protected_mode\n"
-    : : "m"(GDT_descriptor), "n"(CODE_SEGMENT) : "eax");
-
-    asm volatile (
     "start_protected_mode:\n"
-    "mov ax, %0\n"
-    "mov ds, ax\n"
-    "mov es, ax\n"
-    "mov ss, ax\n"
-    "mov fs, ax\n"
-    "mov gs, ax\n"
-    : : "n"(DATA_SEGMENT) : "eax");
+    //"mov ax, %2\n"
+    "mov ds, %2\n"
+    "mov es, %2\n"
+    "mov ss, %2\n"
+    "mov fs, %2\n"
+    "mov gs, %2\n"
+    : : "m"(GDT_descriptor), "n"(CODE_SEGMENT), "r"(DATA_SEGMENT));
 }
 
 static void init_GDT_entry(GDT_entry_t* p, uint32_t base, uint32_t limit, gdt_flags_t flags, gdt_access_byte_t access_byte, DPL_t dpl){
