@@ -6,12 +6,9 @@
 #include "ps2.h"
 #include "gdt.h"
 
-extern char _stack_top_[];
-extern char _stack_end_[];
 void kmain(){
     GDT_init();
     heap_init();
-
 
     if(!init_PS2_controller())
         PANIC("Failed to initialize PS/2 controller!");
