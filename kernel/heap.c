@@ -117,12 +117,13 @@ static void* chunk_find_free(size_t size){
 
 static void chunk_alloc(chunk_header* hdr, size_t size){
     //create new chunk on the next position
-    if (hdr->size > size + sizeof(chunk_header))
+    if (hdr->size > size + sizeof(chunk_header)){
         hdr->next = chunk_create(((char*)hdr + size + sizeof(chunk_header)),
-     hdr->size - size - sizeof(chunk_header), hdr->next, hdr);
+        hdr->size - size - sizeof(chunk_header), hdr->next, hdr);
+        hdr->size = size;
+    }
 
     hdr->is_allocated = 1;
-    hdr->size = size;
 }
 
 static inline void chunk_remove(chunk_header* p){

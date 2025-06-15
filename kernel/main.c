@@ -25,12 +25,6 @@ void kmain(){
     disable_mask_IRQ(IRQ_TIMER);
     disable_mask_IRQ(IRQ_KEYBOARD); 
     set_interrupts();
-
-    heap_basic_test();
-    heap_multiple_test();
-    heap_calloc_test();
-    heap_realloc_test();
-    heap_edge_cases_test();
-    printf("End.\n");
+    
     return;
 }
