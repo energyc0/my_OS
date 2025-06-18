@@ -33,7 +33,7 @@ uint64_t timer_get_ticks(){
 char* gettime(){
     static char buf[16];
 
-    uint32_t total_seconds = tick_counter / 1000;
+    uint32_t total_seconds = tick_counter / TIMER_FREQUENCY;
     int hours = total_seconds/60/60;
     int minutes = total_seconds/60 - hours*60;
     int seconds = total_seconds%60;

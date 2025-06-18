@@ -18,9 +18,11 @@ static inline int inbuf_empty();
 #define FMT_BUF_SIZE (8192)
 #define PARSE_FMT_SUCCESS (0)
 #define PARSE_FMT_FAIL (1)
-static inline int __proc_fmt(char** buf_out, char specifier, int width, int precision, va_list* ap, size_t* chars_written);
+static inline int __proc_fmt(char** buf_out, char specifier, int width, int precision, char padding, va_list* ap, size_t* chars_written);
 //parses format and moves the fmt pointer
-static inline void __parse_fmt(const char** fmt, int* width, int* precision);
+static inline void __parse_fmt(const char** fmt, int* width, int* precision, char* padding);
+//if len < width, then add 'padding' in the beginning (width - len) times
+static inline void __correct_width(char* buf, int width, size_t len, char padding);
 
 static inline void __putchar(int c){
     switch (c) {
@@ -61,8 +63,9 @@ int sprintf(char* str, const char* fmt, ...){
             const size_t start_idx = idx;
             int width, precision;
             char* buf;
-            __parse_fmt(&fmt, &width, &precision);
-            switch (__proc_fmt(&buf, *fmt, width, precision, &ap, &idx)) {
+            char padding;
+            __parse_fmt(&fmt, &width, &precision, &padding);
+            switch (__proc_fmt(&buf, *fmt, width, precision,padding, &ap, &idx)) {
                 case PARSE_FMT_FAIL: 
                     if(*fmt == '\0') --fmt; 
                     strncpy(buf,start_fmt, fmt - start_fmt + 1);
@@ -92,8 +95,9 @@ void printf(const char* fmt, ...){
             const char* start_fmt = ++fmt;
             int width, precision;
             char* buf;
-            __parse_fmt(&fmt, &width, &precision);
-            switch (__proc_fmt(&buf, *fmt, width, precision, &ap, &chars_written)) {
+            char padding;
+            __parse_fmt(&fmt, &width, &precision, &padding);
+            switch (__proc_fmt(&buf, *fmt, width, precision,padding, &ap, &chars_written)) {
                 case PARSE_FMT_FAIL: 
                     if(*fmt == '\0') --fmt; 
                     strncpy(buf,start_fmt, fmt - start_fmt + 1);
@@ -148,9 +152,10 @@ void io_process_keycode(){
     }
 }
 
-static inline void __parse_fmt(const char** fmt, int* width, int* precision){
-    *width = 0;
-    *precision = 0;
+static inline void __parse_fmt(const char** fmt, int* width, int* precision, char* padding){
+    *width = -1;
+    *precision = -1;
+    *padding = (**fmt == '0') ? '0' : ' ';
     if(isdigit(**fmt))
         *width = atoi(*fmt);
     for (; isdigit(**fmt); ++(*fmt));
@@ -159,10 +164,11 @@ static inline void __parse_fmt(const char** fmt, int* width, int* precision){
     for (; isdigit(**fmt); ++(*fmt));
 }
 
-static inline int __proc_fmt(char** buf_out, char specifier, int width, int precision, va_list* ap, size_t* chars_written){
+static inline int __proc_fmt(char** buf_out, char specifier, int width, int precision,char padding, va_list* ap, size_t* chars_written){
     static char buf[FMT_BUF_SIZE];
     *buf_out = buf;
     buf[0] = '\0';
+    size_t len = (size_t)-1;
     switch (specifier) {
         case 'd': case 'i':{
             int val = va_arg(*ap, int);
@@ -204,6 +210,33 @@ static inline int __proc_fmt(char** buf_out, char specifier, int width, int prec
         }
         default: return PARSE_FMT_FAIL;
     }
-    *chars_written += strlen(buf);
+    
+    if(strchr("diOoXx", specifier)){
+        len = strlen(buf);
+        if(len < precision){
+            __correct_width(buf, precision, len, '0');
+            len = precision;
+        }
+    }else if(specifier == 's' && precision >= 0){
+        len = strlen(buf);
+        if(len > precision){
+            len = precision;
+            buf[len] = '\0';
+        }
+    }
+
+    if(len == (size_t)-1)
+        len = strlen(buf);
+    __correct_width(buf, width, len, padding);
+    *chars_written += len;
     return PARSE_FMT_SUCCESS;
+}
+
+static inline void __correct_width(char* buf, int width, size_t len, char padding){
+    if(width > 0 && len < (size_t)width){
+        char temp[len+1];
+        strcpy(temp, buf);
+        memset(buf, padding, width-len);
+        strcpy(buf + width - len, temp);
+    }
 }
