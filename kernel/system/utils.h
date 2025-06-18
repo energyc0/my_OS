@@ -12,10 +12,14 @@ typedef uint32_t size_t;
 
 //str must be a buffer containing enough space for the value
 char* itoa(int32_t value, char* str, uint32_t base);
+int atoi(const char* str);
+
 size_t strlen(const char* str);
 int strcmp(const char* s1, const char* s2);
 char* strchr(const char* str, int character);
 char* strcat(char* dest, const char* src);
+char* strcpy(char* dest, const char* src);
+char* strncpy(char* dest, const char* src, size_t num);
 
 int toupper(int c);
 int tolower(int c);

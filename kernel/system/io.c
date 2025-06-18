@@ -1,4 +1,3 @@
-#include <cstdarg>
 #include <stdarg.h>
 #include "io.h"
 #include "keyboard.h"
@@ -6,7 +5,7 @@
 #include "terminal.h"
 
 //buffer used to store characters to read input from user
-#define INBUFSIZ 1024
+#define INBUFSIZ (1024)
 static struct inbuf{
     volatile char buf[INBUFSIZ];
     volatile size_t count;
@@ -16,7 +15,12 @@ static inline void inbuf_push(int c);
 static inline int inbuf_pop();
 static inline int inbuf_empty();
 
-static inline size_t __parse_fmt(char* buf, char specifier, size_t width, size_t precision, va_list* ap);
+#define FMT_BUF_SIZE (8192)
+#define PARSE_FMT_SUCCESS (0)
+#define PARSE_FMT_FAIL (1)
+static inline int __proc_fmt(char** buf_out, char specifier, int width, int precision, va_list* ap, size_t* chars_written);
+//parses format and moves the fmt pointer
+static inline void __parse_fmt(const char** fmt, int* width, int* precision);
 
 static inline void __putchar(int c){
     switch (c) {
@@ -50,60 +54,23 @@ void println(const char* s){
 int sprintf(char* str, const char* fmt, ...){
     va_list ap;
     va_start(ap, fmt);
-    int idx = 0;
+    size_t idx = 0;
     for (; *fmt; ++fmt) {
         if(*fmt == '%'){
-            switch (*(++fmt)) {
-                case '\0': str[idx] = '%'; --fmt;break;
-                case 'd': case 'i':{
-                    int val = va_arg(ap, int);
-                    itoa(val, str + idx, 10);
-                    for(;str[idx] != '\0'; ++idx);
+            const char* start_fmt = ++fmt;
+            const size_t start_idx = idx;
+            int width, precision;
+            char* buf;
+            __parse_fmt(&fmt, &width, &precision);
+            switch (__proc_fmt(&buf, *fmt, width, precision, &ap, &idx)) {
+                case PARSE_FMT_FAIL: 
+                    if(*fmt == '\0') --fmt; 
+                    strncpy(buf,start_fmt, fmt - start_fmt + 1);
+                    buf[fmt - start_fmt + 1] = '\0';
+                case PARSE_FMT_SUCCESS:
+                    strncpy(str+start_idx, buf, idx - start_idx); 
+                default: 
                     break;
-                }
-                case 'O': case 'o':{
-                    unsigned val = va_arg(ap, unsigned);
-                    str[idx++] = '0';
-                    itoa(val, str+idx, 8);
-                    for(;str[idx] != '\0'; ++idx);
-                    break;
-                }
-                case 'X': case 'x':{
-                    unsigned val = va_arg(ap, unsigned);
-                    str[idx++] = '0';
-                    str[idx++] = 'x';
-                    itoa(val, str+idx, 16);
-                    if(*fmt == 'x')
-                        makelower(str+idx);
-                    for(;str[idx] != '\0'; ++idx);
-                    break;
-                }
-                case 's':{
-                    const char* s = va_arg(ap,const char*);
-                    str[idx] = '\0';
-                    strcat(str+idx, s);
-                    idx+=strlen(s);
-                    break;
-                }
-                case 'c': {
-                    int c = va_arg(ap,int);
-                    str[idx++] = c;
-                    break;
-                }
-                case 'p':{
-                    uint32_t p = va_arg(ap,uint32_t);
-                    str[idx++] = '0';
-                    str[idx++] = 'x';
-                    itoa(p, str+idx, 16);
-                    for(;str[idx] != '\0'; ++idx);
-                    break;
-                }
-                case 'n':{
-                    size_t* p = va_arg(ap,size_t*);
-                    *p = idx;
-                    break;
-                }
-                case '%': str[idx++] = '%'; break;
             }
         }else{
             str[idx++] = *fmt;
@@ -115,67 +82,26 @@ int sprintf(char* str, const char* fmt, ...){
 }
 
 void printf(const char* fmt, ...){
-    static char buf[256];
     size_t chars_written = 0;
-    size_t width = 0;
-    size_t precision = 0;
+
     va_list ap;
     va_start(ap, fmt);
 
     for (; *fmt; ++fmt) {
         if(*fmt == '%'){
-            switch (*(++fmt)) {
-                case '\0': __putchar('%'); --fmt; break;
-                case 'd': case 'i':{
-                    int val = va_arg(ap, int);
-                    __print_string(itoa(val, buf, 10));
-                    chars_written+=strlen(buf);
-                    break;
-                }
-                case 'O': case 'o':{
-                    unsigned val = va_arg(ap, unsigned);
-                    buf[0] = '0';
-                    itoa(val, buf+1, 8);
+            const char* start_fmt = ++fmt;
+            int width, precision;
+            char* buf;
+            __parse_fmt(&fmt, &width, &precision);
+            switch (__proc_fmt(&buf, *fmt, width, precision, &ap, &chars_written)) {
+                case PARSE_FMT_FAIL: 
+                    if(*fmt == '\0') --fmt; 
+                    strncpy(buf,start_fmt, fmt - start_fmt + 1);
+                    buf[fmt - start_fmt + 1] = '\0';
+                case PARSE_FMT_SUCCESS: 
                     __print_string(buf);
-                    chars_written+=strlen(buf)+1;
+                default: 
                     break;
-                }
-                case 'X': case 'x':{
-                    unsigned val = va_arg(ap, unsigned);
-                    buf[0] = '0';
-                    buf[1] = 'x';
-                    itoa(val, buf+2, 16);
-                    __print_string(*fmt == 'x' ? makelower(buf) : buf);
-                    chars_written+=strlen(buf)+2;
-                    break;
-                }
-                case 's':{
-                    const char* s = va_arg(ap,const char*);
-                    __print_string(s);
-                    chars_written+=strlen(s);
-                    break;
-                }
-                case 'c': {
-                    int c = va_arg(ap,int);
-                    __putchar(c);
-                    ++chars_written;
-                    break;
-                }
-                case 'p':{
-                    uint32_t p = va_arg(ap,uint32_t);
-                    buf[0] = '0';
-                    buf[1] = 'x';
-                    itoa(p, buf+2, 16);
-                    __print_string(buf);
-                    chars_written+=strlen(buf)+2;
-                    break;
-                }
-                case 'n':{
-                    size_t* p = va_arg(ap,size_t*);
-                    *p = chars_written;
-                    break;
-                }
-                case '%': __putchar('%'); ++chars_written; break;
             }
         }else{
             __putchar(*fmt);
@@ -222,6 +148,62 @@ void io_process_keycode(){
     }
 }
 
-static inline size_t __parse_fmt(char* buf, char specifier, size_t width, size_t precision, va_list* ap){
+static inline void __parse_fmt(const char** fmt, int* width, int* precision){
+    *width = 0;
+    *precision = 0;
+    if(isdigit(**fmt))
+        *width = atoi(*fmt);
+    for (; isdigit(**fmt); ++(*fmt));
+    if(**fmt == '.')
+        *precision = atoi(++(*fmt));
+    for (; isdigit(**fmt); ++(*fmt));
+}
 
+static inline int __proc_fmt(char** buf_out, char specifier, int width, int precision, va_list* ap, size_t* chars_written){
+    static char buf[FMT_BUF_SIZE];
+    *buf_out = buf;
+    buf[0] = '\0';
+    switch (specifier) {
+        case 'd': case 'i':{
+            int val = va_arg(*ap, int);
+            itoa(val, buf, 10);
+            break;
+        }
+        case 'O': case 'o':{
+            unsigned val = va_arg(*ap, unsigned);
+            itoa(val, buf, 8);
+            break;
+        }
+        case 'X': case 'x':{
+            unsigned val = va_arg(*ap, unsigned);
+            itoa(val, buf, 16);
+            if(specifier == 'x')
+                makelower(buf);
+            break;
+        }
+        case 's':{
+            const char* s = va_arg(*ap,const char*);
+            strcpy(buf,s);
+            break;
+        }
+        case 'c': {
+            int c = va_arg(*ap,int);
+            buf[0] = c;
+            buf[1] = '\0';
+            break;
+        }
+        case 'p':{
+            uint32_t p = va_arg(*ap,uint32_t);
+            itoa(p, buf, 16);
+            break;
+        }
+        case 'n':{
+            size_t* p = va_arg(*ap,size_t*);
+            *p = *chars_written;
+            return PARSE_FMT_SUCCESS;
+        }
+        default: return PARSE_FMT_FAIL;
+    }
+    *chars_written += strlen(buf);
+    return PARSE_FMT_SUCCESS;
 }

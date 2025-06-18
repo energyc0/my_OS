@@ -131,3 +131,36 @@ uint64_t __udivdi3(uint64_t a, uint64_t b){
     }
     return res;
 }
+
+int atoi(const char* str){
+    int res = 0;
+
+    for (; *str != '\0' && isspace(*str); ++str);
+    int sign = *str == '-' ? -1 : 1;
+    if (*str == '-' || *str == '+')
+        ++str;
+
+    for (; *str != '\0' && *str == '0'; ++str);
+    for(;*str != '\0' && isdigit(*str); ++str){
+        res = res*10 + *str - '0';
+    }
+    return res*sign;
+}
+
+char* strcpy(char* dest, const char* src){
+    size_t i = 0;
+    for(; src[i] != '\0'; ++i)
+        dest[i] = src[i];
+    dest[i] = '\0';
+    return dest;
+}
+
+char* strncpy(char* dest, const char* src, size_t num){
+    for(size_t i = 0; i < num; ++i){
+        dest[i] = src[i];
+        if (src[i] == '\0')
+            break;
+    }
+    
+    return dest;
+}
