@@ -2,8 +2,7 @@
 #include "timer.h"
 #include "interrupts.h"
 #include "keyboard.h"
-#include "utils.h"
-#include <stdint.h>
+#include "io.h"
 
 static uint32_t interrupt_num;
 

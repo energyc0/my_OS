@@ -36,11 +36,25 @@ size_t strlen(const char* str){
     return len;
 }
 
-int32_t strcmp(const char* s1, const char* s2){
+int strcmp(const char* s1, const char* s2){
     while (*s1 == *s2 && *s1){
         ++s1;++s2;
     }
     return *s1 - *s2;
+}
+
+char* strchr(const char* str, int character){
+    for(;*str != '\0' && *str != character; ++str);
+    return (char*)((*str == character) ? str : NULL);
+}
+
+char* strcat(char* dest, const char* src){
+    size_t idx = strlen(dest);
+    for (;*src != '\0'; ++src) {
+        dest[idx++] = *src;
+    }
+    dest[idx] = '\0';
+    return dest;
 }
 
 void* memcpy(void* dest, const void* src, size_t count){
@@ -54,13 +68,13 @@ void* memset(void* dest, char ch, size_t count){
     return dest;
 }
 
-char tolower(char c){
+int tolower(int c){
     if('A' <= c && c <= 'Z')
         c += 32;
     return c;
 }
 
-char toupper(char c){
+int toupper(int c){
     if('a' <= c && c <= 'z')
         c -= 32;
     return c;
@@ -75,12 +89,16 @@ char* makelower(char* s){
     return s;
 }
 
-int isalpha(char c){
+int isalpha(int c){
     return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z');
 }
 
-int isdigit(char c){
+int isdigit(int c){
     return '0' <= c && c <= '9';
+}
+
+int isspace(int c){
+    return c == ' ' || c == '\t' || c == '\n' || c == '\f' || c == '\r' || c == '\v';
 }
 
 uint8_t inb(uint16_t port){
@@ -103,4 +121,13 @@ void sleep(unsigned int ms){
 
 static inline void halt(){
     asm volatile("hlt");
+}
+
+uint64_t __udivdi3(uint64_t a, uint64_t b){
+    uint64_t res = 0;
+    while (a >= b) {
+        a-=b;
+        ++res;
+    }
+    return res;
 }

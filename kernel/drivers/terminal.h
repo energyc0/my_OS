@@ -15,9 +15,8 @@ typedef enum{
     CA_BACK_BRIGHT = 0b10000000
 } char_attrib_t;
 
-#define TERMINAL_WIDTH 80
-#define TERMINAL_HEIGHT 25
-
+#define TERMINAL_WIDTH (80)
+#define TERMINAL_HEIGHT (25)
 
 //draws char on the cursor position
 void drawchar(char ch);
@@ -42,8 +41,5 @@ void set_char_attrib(char_attrib_t attr);
 //updates cursor position on the screen
 void update_cursor();
 void scroll();
-
-//process user input and output it on the screen
-void send_symbol_to_terminal(scancode_t scancode);
 
 #endif

@@ -25,11 +25,11 @@ SECTIONS{
          *(.rodata .rodata.*) 
     } : rodata
 
+    _bss_start_ = .;
     .bss : {
         *(.bss .bss.*)
-
-
     } : bss
+    _bss_end_ = .;
 
 
     . = ALIGN(16);

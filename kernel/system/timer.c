@@ -1,5 +1,6 @@
 #include "timer.h"
 #include "utils.h"
+#include "io.h"
 #include <stdint.h>
 
 #define TIMER_FREQUENCY 1000
@@ -23,4 +24,20 @@ void timer_on_interrupt(){
 
 void timer_setup(){
     timer_set_frequency(TIMER_FREQUENCY);
+}
+
+uint64_t timer_get_ticks(){
+    return tick_counter;
+}
+
+char* gettime(){
+    static char buf[16];
+
+    uint32_t total_seconds = tick_counter / 1000;
+    int hours = total_seconds/60/60;
+    int minutes = total_seconds/60 - hours*60;
+    int seconds = total_seconds%60;
+
+    sprintf(buf, "%.2d:%.2d:%.2d", hours, minutes, seconds);
+    return buf;
 }

@@ -1,6 +1,6 @@
 #include "heap.h"
-#include "utils.h"
-#include <stdint.h>
+#include "io.h"
+
 
 extern char _heap_start_[];
 extern char _heap_end_[];
