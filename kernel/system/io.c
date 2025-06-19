@@ -1,28 +1,54 @@
 #include <stdarg.h>
+#include <stdint.h>
 #include "io.h"
+#include "interrupts.h"
 #include "keyboard.h"
 #include "utils.h"
 #include "terminal.h"
 
-//buffer used to store characters to read input from user
-#define INBUFSIZ (1024)
-static struct inbuf{
-    volatile char buf[INBUFSIZ];
+#define STACK_SIZE (BUFSIZ)
+typedef struct stack_t{
+    volatile char buf[STACK_SIZE];
     volatile size_t count;
-} inbuf;
+} stack_t;
 
-static inline void inbuf_push(int c);
-static inline int inbuf_pop();
-static inline int inbuf_empty();
+static inline void st_push(stack_t* st, int c);
+static inline int st_pop(stack_t* st);
+static inline int st_empty(const stack_t* st);
+//copy src buf to dst;
+//static inline void st_flush(stack_t* dst, const stack_t* src);
 
 #define FMT_BUF_SIZE (8192)
 #define PARSE_FMT_SUCCESS (0)
 #define PARSE_FMT_FAIL (1)
+//draw char on the screen and advance the cursor
+static inline void __putchar(int c);
+//moves cursor backward and erases the previous char
+static inline void __deletechar();
+//draw string on the screen via __putchar()
+static inline void __print_string(const char* s);
 static inline int __proc_fmt(char** buf_out, char specifier, int width, int precision, char padding, va_list* ap, size_t* chars_written);
 //parses format and moves the fmt pointer
 static inline void __parse_fmt(const char** fmt, int* width, int* precision, char* padding);
 //if len < width, then add 'padding' in the beginning (width - len) times
 static inline void __correct_width(char* buf, int width, size_t len, char padding);
+
+//buffer used to store keycodes related to terminal until '\n' character
+static stack_t keycode_buf;
+//buffer used to store user input in characters
+static stack_t inbuf;
+
+typedef enum input_operation_t : uint8_t{
+    IN_NONE,
+    IN_PRINTCHAR,
+    IN_ERASECHAR
+}input_operation_t;
+
+//return code of operation to perform
+//static inline input_operation_t __parse_keycode(keycode_t kc);
+//static inline void __parse_symbolic(keycode_t kc);
+static inline int __is_symbolic(scancode_t sc);
+static inline void __flush_keycodes();
 
 static inline void __putchar(int c){
     switch (c) {
@@ -31,6 +57,11 @@ static inline void __putchar(int c){
     }
     drawchar(c);
     advance_cursor();
+}
+
+static inline void __deletechar(){
+    backward_cursor();
+    erasechar();
 }
 
 static inline void __print_string(const char* s){
@@ -70,8 +101,10 @@ int sprintf(char* str, const char* fmt, ...){
                     if(*fmt == '\0') --fmt; 
                     strncpy(buf,start_fmt, fmt - start_fmt + 1);
                     buf[fmt - start_fmt + 1] = '\0';
+                    __attribute__ ((fallthrough));
                 case PARSE_FMT_SUCCESS:
-                    strncpy(str+start_idx, buf, idx - start_idx); 
+                    strncpy(str+start_idx, buf, idx - start_idx);
+                    __attribute__ ((fallthrough)); 
                 default: 
                     break;
             }
@@ -102,8 +135,10 @@ void printf(const char* fmt, ...){
                     if(*fmt == '\0') --fmt; 
                     strncpy(buf,start_fmt, fmt - start_fmt + 1);
                     buf[fmt - start_fmt + 1] = '\0';
+                    __attribute__ ((fallthrough));
                 case PARSE_FMT_SUCCESS: 
                     __print_string(buf);
+                    __attribute__ ((fallthrough));
                 default: 
                     break;
             }
@@ -116,21 +151,21 @@ void printf(const char* fmt, ...){
     update_cursor();
 }
 
-static inline void inbuf_push(int c){
-    if (inbuf.count < INBUFSIZ)
-        inbuf.buf[inbuf.count++] = c;
+static inline void st_push(stack_t* st, int c){
+    if (st->count < STACK_SIZE)
+        st->buf[st->count++] = c;
 }
-static inline int inbuf_pop(){
-    return inbuf.buf[--inbuf.count];
+static inline int st_pop(stack_t* st){
+    return st->buf[--(st->count)];
 }
 
-static inline int inbuf_empty(){
-    return inbuf.count == 0;
+static inline int st_empty(const stack_t* st){
+    return st->count == 0;
 }
 
 int getchar(){
-    while (inbuf_empty());
-    return inbuf_pop();
+    while (st_empty(&inbuf));
+    return st_pop(&inbuf);
 }
 
 size_t getline(char* buf, size_t bufsiz){
@@ -143,13 +178,111 @@ size_t getline(char* buf, size_t bufsiz){
     return count;
 }
 
+static inline int __is_symbolic(scancode_t sc){
+    switch (sc) {
+        case SCANCODE_A:case SCANCODE_B:case SCANCODE_C:case SCANCODE_D:
+        case SCANCODE_E:case SCANCODE_F:case SCANCODE_G:case SCANCODE_H:
+        case SCANCODE_I:case SCANCODE_J:case SCANCODE_K:case SCANCODE_L:
+        case SCANCODE_M:case SCANCODE_N:case SCANCODE_O:case SCANCODE_P:
+        case SCANCODE_Q:case SCANCODE_R:case SCANCODE_S:case SCANCODE_T:
+        case SCANCODE_U:case SCANCODE_V:case SCANCODE_W:case SCANCODE_X:
+        case SCANCODE_Y:case SCANCODE_Z:case SCANCODE_1:case SCANCODE_2:
+        case SCANCODE_3:case SCANCODE_4:case SCANCODE_5:case SCANCODE_6:
+        case SCANCODE_7:case SCANCODE_8:case SCANCODE_9:case SCANCODE_0:
+        case SCANCODE_SPACE:case SCANCODE_COMMA:case SCANCODE_PERIOD:case SCANCODE_ENTER: return 1;
+        default: return 0;
+    }
+}
+
+//interrupts disabled
 void io_process_keycode(){
     keycode_t kc = getkeycode();
-    //if ascii character and not '\0'
-    if(0 < kc && kc <= 127){
-        inbuf_push(kc);
-        putchar(kc);
+    if(KC_IS_ON_RELEASE(kc))
+        return;
+
+    if(KC_KEY(kc) == SCANCODE_BACKSPACE){
+        if(!st_empty(&keycode_buf)){
+            st_pop(&keycode_buf);
+            __deletechar();
+            update_cursor();
+        }
+    }else if(__is_symbolic(KC_KEY(kc))){
+        int ch;
+        switch (KC_KEY(kc)) {
+            case SCANCODE_A: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'a' : 'A'; break;
+            case SCANCODE_B: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'b' : 'B'; break;
+            case SCANCODE_C: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'c' : 'C'; break;
+            case SCANCODE_D: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'd' : 'D'; break;
+            case SCANCODE_E: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'e' : 'E'; break;
+            case SCANCODE_F: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'f' : 'F'; break;
+            case SCANCODE_G: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'g' : 'G'; break;
+            case SCANCODE_H: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'h' : 'H'; break;
+            case SCANCODE_I: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'i' : 'I'; break;
+            case SCANCODE_J: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'j' : 'J'; break;
+            case SCANCODE_K: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'k' : 'K'; break;
+            case SCANCODE_L: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'l' : 'L'; break;
+            case SCANCODE_M: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'm' : 'M'; break;
+            case SCANCODE_N: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'n' : 'N'; break;
+            case SCANCODE_O: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'o' : 'O'; break;
+            case SCANCODE_P: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'p' : 'P'; break;
+            case SCANCODE_Q: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'q' : 'Q'; break;
+            case SCANCODE_R: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'r' : 'R'; break;
+            case SCANCODE_S: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  's' : 'S'; break;
+            case SCANCODE_T: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  't' : 'T'; break;
+            case SCANCODE_U: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'u' : 'U'; break;
+            case SCANCODE_V: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'v' : 'V'; break;
+            case SCANCODE_W: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'w' : 'W'; break;
+            case SCANCODE_X: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'x' : 'X'; break;
+            case SCANCODE_Y: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'y' : 'Y'; break;
+            case SCANCODE_Z: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'z' : 'Z'; break;
+            case SCANCODE_1: ch = !KC_IS_SHIFT(kc) ? '1' : '!'; break;
+            case SCANCODE_2: ch = !KC_IS_SHIFT(kc) ? '2' : '@'; break;
+            case SCANCODE_3: ch = !KC_IS_SHIFT(kc) ? '3' : '#'; break;
+            case SCANCODE_4: ch = !KC_IS_SHIFT(kc) ? '4' : '$'; break;
+            case SCANCODE_5: ch = !KC_IS_SHIFT(kc) ? '5' : '%'; break;
+            case SCANCODE_6: ch = !KC_IS_SHIFT(kc) ? '6' : '^'; break;
+            case SCANCODE_7: ch = !KC_IS_SHIFT(kc) ? '7' : '&'; break;
+            case SCANCODE_8: ch = !KC_IS_SHIFT(kc) ? '8' : '*'; break;
+            case SCANCODE_9: ch = !KC_IS_SHIFT(kc) ? '9' : '('; break;
+            case SCANCODE_0: ch = !KC_IS_SHIFT(kc) ? '0' : ')'; break;
+            case SCANCODE_SPACE: ch = ' '; break;
+            case SCANCODE_COMMA: ch = !KC_IS_SHIFT(kc) ? ',' : '<'; break;
+            case SCANCODE_PERIOD: ch = !KC_IS_SHIFT(kc) ? '.' : '>'; break;
+            case SCANCODE_ENTER: ch = '\n';break;
+            default: ch = '\0'; break;
+        }
+        if(ch != '\0'){
+            st_push(&keycode_buf, ch);
+            //st_push(&keycode_buf, IN_PRINTCHAR);
+            putchar(ch);
+            if(ch == '\n')
+                __flush_keycodes();
+        }
     }
+}
+
+//interrupts disabled
+static inline void __flush_keycodes(){
+    for(; !st_empty(&keycode_buf); )
+        st_push(&inbuf,st_pop(&keycode_buf));
+    /*
+    for(; !st_empty(&keycode_buf); ){
+        switch (st_pop(&keycode_buf)) {
+            case IN_ERASECHAR:{
+                if(!st_empty(&inbuf))
+                    st_pop(&inbuf);
+                break;
+            }
+            case IN_PRINTCHAR:{
+                st_push(&inbuf,st_pop(&keycode_buf));
+                break;
+            }
+            case IN_NONE: break;
+            default:PANIC("__flush_keycodes() - UB!\n"); break;
+        }
+    }
+    keycode_buf.count = 0;
+    */
 }
 
 static inline void __parse_fmt(const char** fmt, int* width, int* precision, char* padding){
@@ -168,7 +301,7 @@ static inline int __proc_fmt(char** buf_out, char specifier, int width, int prec
     static char buf[FMT_BUF_SIZE];
     *buf_out = buf;
     buf[0] = '\0';
-    size_t len = (size_t)-1;
+    int len = -1;
     switch (specifier) {
         case 'd': case 'i':{
             int val = va_arg(*ap, int);
@@ -225,7 +358,7 @@ static inline int __proc_fmt(char** buf_out, char specifier, int width, int prec
         }
     }
 
-    if(len == (size_t)-1)
+    if(len == -1)
         len = strlen(buf);
     __correct_width(buf, width, len, padding);
     *chars_written += len;

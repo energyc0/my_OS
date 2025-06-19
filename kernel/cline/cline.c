@@ -14,12 +14,12 @@ void launch_command_line(){
     while(1){
         printf(PROMPT);
         char** args = read_command(buf, CMDBUFSIZ);
-        /*
+        
         printf("Arguments debug:\n");
         for(size_t i = 0; args[i] != NULL; i++){
             printf("%d) %s\n", i+1, args[i]);
         }
-        */
+        
         if(args != NULL && args[0] != NULL)
             process_command(args);
     }

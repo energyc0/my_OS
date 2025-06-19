@@ -5,7 +5,7 @@
 #include "interrupts.h"
 
 #define NULL (0)
-
+#define BUFSIZ (8192)
 typedef uint32_t size_t;
 
 #define swap(a,b,type) do {type temp = a; a = b; b = temp;} while(0)

@@ -6,7 +6,7 @@
 #define KEYBOARD_DATA_PORT 0x60
 
 typedef enum scancode_t{
-    ON_RELEASE = 0xF0,
+    SCANCODE_ON_RELEASE = 0xF0,
     SCANCODE_A = 0x1C,
     SCANCODE_B = 0x32,
     SCANCODE_C = 0x21,
@@ -50,10 +50,11 @@ typedef enum scancode_t{
     SCANCODE_COMMA = 0x41,
     SCANCODE_PERIOD = 0x49,
     SCANCODE_ENTER = 0x5A,
-    SCANCODE_BACKSPACE = 0x0E
+    SCANCODE_BACKSPACE = 0x66,
+    SCANCODE_MISC = 0xE0
 }scancode_t;
 
-typedef enum keycode_t{
+typedef enum charkey_t : int8_t{
     KEY_a = 'a',
     KEY_b,
     KEY_c,
@@ -126,21 +127,37 @@ typedef enum keycode_t{
     KEY_ASTERISK = '*',
     KEY_LBRACE = '(',
     KEY_RBRACE = ')',
+    KEY_BACKSPACE = -127,
+    KEY_DEL
+}charkey_t;
 
-}keycode_t;
-
-typedef enum keyboard_flag_bit{
-    KF_CAPSLOCK = 0x1,
-    KF_SHIFT = 0x2
+typedef enum keyboard_flag_bit : uint8_t{
+    KF_CAPSLOCK = (1<<0),
+    KF_SHIFT = (1<<1),
+    KF_MISC = (1<<6),
+    KF_ON_RELEASE = (1<<7)
 }keyboard_flag_bit;
 
 typedef uint8_t keyboard_flags;
+
+/*
+       flags     charkey
+    0000 0000 | 0000 0000
+*/
+typedef uint16_t keycode_t;
+
+#define KC_IS_ON_RELEASE(kc) ((KF_ON_RELEASE << 8) & (kc))
+#define KC_IS_CAPSLOCK(kc) ((KF_CAPSLOCK << 8) & (kc))
+#define KC_IS_SHIFT(kc) ((KF_SHIFT << 8) & (kc))
+#define KC_IS_MISC(kc) ((KF_MISC << 8) & kc)
+#define KC_KEY(kc) (0xFF & (kc))
 
 //set scancode set 2
 int init_keyboard();
 //should be called in ISR
 void process_scancode();
-//getchar() counterpart, return 0 if not implemented key
+//getchar() counterpart
 keycode_t getkeycode();
+
 
 #endif

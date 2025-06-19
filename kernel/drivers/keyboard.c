@@ -2,6 +2,7 @@
 #include "io.h"
 #include "ps2.h"
 #include "utils.h"
+#include <stdint.h>
 
 #define KEYBOARD_ACK (0xFA)
 #define KEYBOARD_RESEND (0xFE)
@@ -29,11 +30,15 @@ static struct keyboard_state{
 
 static void init_keyboard_state();
 static void reinterpret_scancode();
-static keycode_t reinterpet_scan_to_key(scancode_t scancode);
+static keycode_t reinterpet_scan_to_key();
 
 //return value in the 0'st bit
 static inline int is_shift_pressed();
 static inline int is_capslock_enabled();
+//check keycode_buf if there any ON_RELEASE
+static inline int is_key_release();
+static inline void process_scancode_to_key(keycode_t* kc);
+
 
 static inline void push_scancode(scancode_t sc);
 static inline scancode_t pop_scancode();
@@ -69,11 +74,12 @@ int init_keyboard(){
 }
 
 void process_scancode(){
-    uint8_t scancode = inb(KEYBOARD_DATA_PORT);
-    switch (scancode) {
-        case ON_RELEASE: push_scancode(scancode); break;
-        default: push_scancode(scancode); reinterpret_scancode(); break;
-    }
+    //push all scancodes into the stack
+    while(PS2_OUTPUT_BUFFER_STATUS(inb(PS2_STATUS_REGISTER)))
+        push_scancode(inb(KEYBOARD_DATA_PORT));
+    //reinterpret scancode sequence
+    reinterpret_scancode();
+    keyboard_state.scancode_c = 0;
 }
 
 
@@ -111,84 +117,26 @@ static void init_keyboard_state(){
 }
 
 static void reinterpret_scancode(){
-    if(is_empty_scancode())
-        return;
-    scancode_t scancode = pop_scancode();
-    switch (scancode) {
-        case SCANCODE_LSHIFT: case SCANCODE_RSHIFT:{
-            if(is_empty_scancode()){
-                keyboard_state.flags |= KF_SHIFT;
-            }else if(pop_scancode() == ON_RELEASE){
-                keyboard_state.flags &= ~KF_SHIFT;
-            }
-            break;
-        }
-
-        case SCANCODE_CAPSLOCK:{
-            // if ON_RELEASE not found
-            if (is_empty_scancode()) {
-                keyboard_state.flags ^= KF_CAPSLOCK;
-            }
-            break;
-        }
-        default:{
-            if (is_empty_scancode()){ // if ON_RELEASE not found
-                //then it is a single key
-                keycode_t kc = reinterpet_scan_to_key(scancode);
-                push_keycode(kc);
-                io_process_keycode();
-            }
-            break;
-        }
-    }
-    //clear buffer
-    keyboard_state.scancode_c = 0;
+    push_keycode(reinterpet_scan_to_key());
+    io_process_keycode();
 }
 
-static keycode_t reinterpet_scan_to_key(scancode_t scancode){
-    switch (scancode) {
-        case SCANCODE_A: return !(is_shift_pressed() ^ is_capslock_enabled()) ?  'a' : 'A';
-        case SCANCODE_B: return !(is_shift_pressed() ^ is_capslock_enabled()) ?  'b' : 'B';
-        case SCANCODE_C: return !(is_shift_pressed() ^ is_capslock_enabled()) ?  'c' : 'C';
-        case SCANCODE_D: return !(is_shift_pressed() ^ is_capslock_enabled()) ?  'd' : 'D';
-        case SCANCODE_E: return !(is_shift_pressed() ^ is_capslock_enabled()) ?  'e' : 'E';
-        case SCANCODE_F: return !(is_shift_pressed() ^ is_capslock_enabled()) ?  'f' : 'F';
-        case SCANCODE_G: return !(is_shift_pressed() ^ is_capslock_enabled()) ?  'g' : 'G';
-        case SCANCODE_H: return !(is_shift_pressed() ^ is_capslock_enabled()) ?  'h' : 'H';
-        case SCANCODE_I: return !(is_shift_pressed() ^ is_capslock_enabled()) ?  'i' : 'I';
-        case SCANCODE_J: return !(is_shift_pressed() ^ is_capslock_enabled()) ?  'j' : 'J';
-        case SCANCODE_K: return !(is_shift_pressed() ^ is_capslock_enabled()) ?  'k' : 'K';
-        case SCANCODE_L: return !(is_shift_pressed() ^ is_capslock_enabled()) ?  'l' : 'L';
-        case SCANCODE_M: return !(is_shift_pressed() ^ is_capslock_enabled()) ?  'm' : 'M';
-        case SCANCODE_N: return !(is_shift_pressed() ^ is_capslock_enabled()) ?  'n' : 'N';
-        case SCANCODE_O: return !(is_shift_pressed() ^ is_capslock_enabled()) ?  'o' : 'O';
-        case SCANCODE_P: return !(is_shift_pressed() ^ is_capslock_enabled()) ?  'p' : 'P';
-        case SCANCODE_Q: return !(is_shift_pressed() ^ is_capslock_enabled()) ?  'q' : 'Q';
-        case SCANCODE_R: return !(is_shift_pressed() ^ is_capslock_enabled()) ?  'r' : 'R';
-        case SCANCODE_S: return !(is_shift_pressed() ^ is_capslock_enabled()) ?  's' : 'S';
-        case SCANCODE_T: return !(is_shift_pressed() ^ is_capslock_enabled()) ?  't' : 'T';
-        case SCANCODE_U: return !(is_shift_pressed() ^ is_capslock_enabled()) ?  'u' : 'U';
-        case SCANCODE_V: return !(is_shift_pressed() ^ is_capslock_enabled()) ?  'v' : 'V';
-        case SCANCODE_W: return !(is_shift_pressed() ^ is_capslock_enabled()) ?  'w' : 'W';
-        case SCANCODE_X: return !(is_shift_pressed() ^ is_capslock_enabled()) ?  'x' : 'X';
-        case SCANCODE_Y: return !(is_shift_pressed() ^ is_capslock_enabled()) ?  'y' : 'Y';
-        case SCANCODE_Z: return !(is_shift_pressed() ^ is_capslock_enabled()) ?  'z' : 'Z';
-        case SCANCODE_1: return !is_shift_pressed() ? '1' : '!';
-        case SCANCODE_2: return !is_shift_pressed() ? '2' : '@';
-        case SCANCODE_3: return !is_shift_pressed() ? '3' : '#';
-        case SCANCODE_4: return !is_shift_pressed() ? '4' : '$';
-        case SCANCODE_5: return !is_shift_pressed() ? '5' : '%';
-        case SCANCODE_6: return !is_shift_pressed() ? '6' : '^';
-        case SCANCODE_7: return !is_shift_pressed() ? '7' : '&';
-        case SCANCODE_8: return !is_shift_pressed() ? '8' : '*';
-        case SCANCODE_9: return !is_shift_pressed() ? '9' : '(';
-        case SCANCODE_0: return !is_shift_pressed() ? '0' : ')';
-        case SCANCODE_SPACE: return ' ';
-        case SCANCODE_COMMA: return !is_shift_pressed() ? ',' : '<';
-        case SCANCODE_PERIOD: return !is_shift_pressed() ? '.' : '>';
-        case SCANCODE_ENTER: return '\n';
-        default:return '\0';
+static keycode_t reinterpet_scan_to_key(){
+    keycode_t kc = (keyboard_state.flags << 8);
+    process_scancode_to_key(&kc);
+    switch (KC_KEY(kc)) {
+        case SCANCODE_CAPSLOCK: keyboard_state.flags ^= KF_CAPSLOCK; break;
+        case SCANCODE_RSHIFT: case SCANCODE_LSHIFT:{
+            if (KC_IS_ON_RELEASE(kc)) {
+                keyboard_state.flags &= (~KF_SHIFT);
+            }else{
+                keyboard_state.flags |= KF_SHIFT;
+            }
+            break;
+        }
     }
+    //printf("=0x%X=\n", kc);
+    return kc;
 }
 
 static inline int is_shift_pressed(){
@@ -201,4 +149,30 @@ static inline int is_capslock_enabled(){
 keycode_t getkeycode(){
     while (is_empty_keycode());
     return pop_keycode();
+}
+
+static inline int is_key_release(){
+    for(size_t i = 0; i < keyboard_state.scancode_c; ++i)
+        if(keyboard_state.scancode_buf[i] == SCANCODE_ON_RELEASE)
+            return 1;
+    return 0;
+}
+
+static inline void process_scancode_to_key(keycode_t* kc){
+    //stupid processing of scancodes
+    //will not work for the whole set of keys
+    while(!is_empty_scancode()){
+        scancode_t sc = pop_scancode();
+        switch (sc) {
+            case SCANCODE_MISC:
+                *kc |= (KF_MISC << 8);
+                break;
+            case SCANCODE_ON_RELEASE:
+                *kc |= (KF_ON_RELEASE << 8);
+                break;
+            default:
+                *kc = (*kc & 0xFF00) + sc;
+                break;
+        }
+    }
 }
