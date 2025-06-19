@@ -38,15 +38,7 @@ static stack_t keycode_buf;
 //buffer used to store user input in characters
 static stack_t inbuf;
 
-typedef enum input_operation_t : uint8_t{
-    IN_NONE,
-    IN_PRINTCHAR,
-    IN_ERASECHAR
-}input_operation_t;
-
 //return code of operation to perform
-//static inline input_operation_t __parse_keycode(keycode_t kc);
-//static inline void __parse_symbolic(keycode_t kc);
 static inline int __is_symbolic(scancode_t sc);
 static inline void __flush_keycodes();
 
@@ -209,32 +201,32 @@ void io_process_keycode(){
     }else if(__is_symbolic(KC_KEY(kc))){
         int ch;
         switch (KC_KEY(kc)) {
-            case SCANCODE_A: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'a' : 'A'; break;
-            case SCANCODE_B: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'b' : 'B'; break;
-            case SCANCODE_C: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'c' : 'C'; break;
-            case SCANCODE_D: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'd' : 'D'; break;
-            case SCANCODE_E: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'e' : 'E'; break;
-            case SCANCODE_F: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'f' : 'F'; break;
-            case SCANCODE_G: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'g' : 'G'; break;
-            case SCANCODE_H: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'h' : 'H'; break;
-            case SCANCODE_I: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'i' : 'I'; break;
-            case SCANCODE_J: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'j' : 'J'; break;
-            case SCANCODE_K: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'k' : 'K'; break;
-            case SCANCODE_L: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'l' : 'L'; break;
-            case SCANCODE_M: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'm' : 'M'; break;
-            case SCANCODE_N: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'n' : 'N'; break;
-            case SCANCODE_O: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'o' : 'O'; break;
-            case SCANCODE_P: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'p' : 'P'; break;
-            case SCANCODE_Q: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'q' : 'Q'; break;
-            case SCANCODE_R: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'r' : 'R'; break;
-            case SCANCODE_S: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  's' : 'S'; break;
-            case SCANCODE_T: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  't' : 'T'; break;
-            case SCANCODE_U: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'u' : 'U'; break;
-            case SCANCODE_V: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'v' : 'V'; break;
-            case SCANCODE_W: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'w' : 'W'; break;
-            case SCANCODE_X: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'x' : 'X'; break;
-            case SCANCODE_Y: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'y' : 'Y'; break;
-            case SCANCODE_Z: ch = !(KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'z' : 'Z'; break;
+            case SCANCODE_A: ch = (KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'A' : 'a' ; break;
+            case SCANCODE_B: ch = (KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'B' : 'b'; break;
+            case SCANCODE_C: ch = (KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'C' : 'c' ; break;
+            case SCANCODE_D: ch = (KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'D' : 'd'; break;
+            case SCANCODE_E: ch = (KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'E' : 'e'; break;
+            case SCANCODE_F: ch = (KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'F' : 'f'; break;
+            case SCANCODE_G: ch = (KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'G' : 'g'; break;
+            case SCANCODE_H: ch = (KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'H' : 'h'; break;
+            case SCANCODE_I: ch = (KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'I' : 'i'; break;
+            case SCANCODE_J: ch = (KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'J' : 'j'; break;
+            case SCANCODE_K: ch = (KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'K' : 'k'; break;
+            case SCANCODE_L: ch = (KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'L' : 'l'; break;
+            case SCANCODE_M: ch = (KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'M' : 'm'; break;
+            case SCANCODE_N: ch = (KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'N' : 'n'; break;
+            case SCANCODE_O: ch = (KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'O' : 'o'; break;
+            case SCANCODE_P: ch = (KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'P' : 'p'; break;
+            case SCANCODE_Q: ch = (KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'Q' : 'q'; break;
+            case SCANCODE_R: ch = (KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'R' : 'r'; break;
+            case SCANCODE_S: ch = (KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'S' : 's'; break;
+            case SCANCODE_T: ch = (KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'T' : 't'; break;
+            case SCANCODE_U: ch = (KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'U' : 'u'; break;
+            case SCANCODE_V: ch = (KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'V' : 'v'; break;
+            case SCANCODE_W: ch = (KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'W' : 'w'; break;
+            case SCANCODE_X: ch = (KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'X' : 'x'; break;
+            case SCANCODE_Y: ch = (KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'Y' : 'y'; break;
+            case SCANCODE_Z: ch = (KC_IS_SHIFT(kc) ^ KC_IS_CAPSLOCK(kc)) ?  'Z' : 'z'; break;
             case SCANCODE_1: ch = !KC_IS_SHIFT(kc) ? '1' : '!'; break;
             case SCANCODE_2: ch = !KC_IS_SHIFT(kc) ? '2' : '@'; break;
             case SCANCODE_3: ch = !KC_IS_SHIFT(kc) ? '3' : '#'; break;
@@ -253,7 +245,6 @@ void io_process_keycode(){
         }
         if(ch != '\0'){
             st_push(&keycode_buf, ch);
-            //st_push(&keycode_buf, IN_PRINTCHAR);
             putchar(ch);
             if(ch == '\n')
                 __flush_keycodes();
@@ -265,24 +256,6 @@ void io_process_keycode(){
 static inline void __flush_keycodes(){
     for(; !st_empty(&keycode_buf); )
         st_push(&inbuf,st_pop(&keycode_buf));
-    /*
-    for(; !st_empty(&keycode_buf); ){
-        switch (st_pop(&keycode_buf)) {
-            case IN_ERASECHAR:{
-                if(!st_empty(&inbuf))
-                    st_pop(&inbuf);
-                break;
-            }
-            case IN_PRINTCHAR:{
-                st_push(&inbuf,st_pop(&keycode_buf));
-                break;
-            }
-            case IN_NONE: break;
-            default:PANIC("__flush_keycodes() - UB!\n"); break;
-        }
-    }
-    keycode_buf.count = 0;
-    */
 }
 
 static inline void __parse_fmt(const char** fmt, int* width, int* precision, char* padding){

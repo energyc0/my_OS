@@ -146,11 +146,12 @@ typedef uint8_t keyboard_flags;
 */
 typedef uint16_t keycode_t;
 
-#define KC_IS_ON_RELEASE(kc) ((KF_ON_RELEASE << 8) & (kc))
-#define KC_IS_CAPSLOCK(kc) ((KF_CAPSLOCK << 8) & (kc))
-#define KC_IS_SHIFT(kc) ((KF_SHIFT << 8) & (kc))
-#define KC_IS_MISC(kc) ((KF_MISC << 8) & kc)
+#define KC_IS_ON_RELEASE(kc) (((KF_ON_RELEASE) & KC_FLAGS(kc)) >> 7)
+#define KC_IS_CAPSLOCK(kc) ((KF_CAPSLOCK) & KC_FLAGS(kc))
+#define KC_IS_SHIFT(kc) (((KF_SHIFT) & KC_FLAGS(kc)) >> 1)
+#define KC_IS_MISC(kc) (((KF_MISC) & KC_FLAGS(kc)) >> 6)
 #define KC_KEY(kc) (0xFF & (kc))
+#define KC_FLAGS(kc) ((kc) >> 8)
 
 //set scancode set 2
 int init_keyboard();

@@ -125,7 +125,11 @@ static keycode_t reinterpet_scan_to_key(){
     keycode_t kc = (keyboard_state.flags << 8);
     process_scancode_to_key(&kc);
     switch (KC_KEY(kc)) {
-        case SCANCODE_CAPSLOCK: keyboard_state.flags ^= KF_CAPSLOCK; break;
+        case SCANCODE_CAPSLOCK:{ 
+            if(!KC_IS_ON_RELEASE(kc))
+                keyboard_state.flags ^= KF_CAPSLOCK;
+            break;
+        }
         case SCANCODE_RSHIFT: case SCANCODE_LSHIFT:{
             if (KC_IS_ON_RELEASE(kc)) {
                 keyboard_state.flags &= (~KF_SHIFT);
