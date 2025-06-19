@@ -1,6 +1,7 @@
 #include "cline.h"
 #include "io.h"
 #include "timer.h"
+#include "terminal.h"
 
 #define CMDBUFSIZ (8192)
 #define MAXARGS (1024)
@@ -14,12 +15,12 @@ void launch_command_line(){
     while(1){
         printf(PROMPT);
         char** args = read_command(buf, CMDBUFSIZ);
-        
+        /*
         printf("Arguments debug:\n");
         for(size_t i = 0; args[i] != NULL; i++){
             printf("%d) %s\n", i+1, args[i]);
         }
-        
+        */
         if(args != NULL && args[0] != NULL)
             process_command(args);
     }
@@ -56,9 +57,18 @@ static char** read_command(char* buf, size_t bufsiz){
 
 __attribute__((used))static void process_command(char** command){
     if(strcmp("help", command[0]) == 0){
-        printf("\"time\" - print time since boot\n");
+        printf("\"time\" - print time since boot\n"
+               "\"echo\" - print given arguments\n"
+               "\"clear\" - clear the screen\n");
     }else if(strcmp("time", command[0]) == 0){
         printf("%s\n", gettime());
+    }else if(strcmp("echo", command[0]) == 0){
+        for(size_t i = 1; command[i] != NULL; ++i)
+            printf("%s ", command[i]);
+        putchar('\n');
+    }else if(strcmp("clear", command[0]) == 0){
+        clear_screen();
+        move_cursor(0, 0);
     }else{
         printf("Undefined command: \"%s\",\n"
             "type \"help\" for command list\n", command[0]);

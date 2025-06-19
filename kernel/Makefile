@@ -4,7 +4,7 @@ KERNEL_DIRS:=$(shell find -type d ! -name '.' -printf "%f ")
 
 BUILD_DIR:=../build/kernel
 BUILD_DIRS:=$(BUILD_DIR) $(foreach dir, $(KERNEL_DIRS), $(BUILD_DIR)/$(dir))
-CFLAGS:=-ggdb3 -c -m32 -ffreestanding -masm=intel -O0 -Wall -Wextra -fno-pic -nostdlib $(addprefix -I,$(KERNEL_DIRS))
+CFLAGS:=-ggdb3 -c -m32 -ffreestanding -masm=intel -O2 -Wall -Wextra -fno-pic -nostdlib $(addprefix -I,$(KERNEL_DIRS))
 
 SRC_C:=$(wildcard *.c $(foreach dir, $(KERNEL_DIRS), $(dir)/*.c))
 SRC_ASM:=$(wildcard *.asm $(foreach dir, $(KERNEL_DIRS), $(dir)/*.asm))
